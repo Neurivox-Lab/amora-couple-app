@@ -113,41 +113,28 @@ export const PlayScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        {/* 1. 500+ SCENARIOS & COMPATIBILITY QUIZZES HERO */}
+        {/* 1. FEATURED GAME HERO */}
         <RomanticCard style={styles.deepQuizHeroCard} variant="glass">
           <View style={styles.deepQuizHeroTop}>
             <View style={styles.deepQuizBadge}>
-              <Sparkles size={14} color={Colors.primary} />
-              <Text style={styles.deepQuizBadgeText}>500+ SITUATION & OPINION QUIZZES</Text>
+              <Gamepad2 size={14} color={Colors.primary} />
+              <Text style={styles.deepQuizBadgeText}>FEATURED GAME OF THE DAY</Text>
             </View>
-            <Text style={styles.matchSyncTag}>2-Player Match Sync</Text>
+            <Text style={styles.matchSyncTag}>2-Player Live Arcade</Text>
           </View>
 
-          <Text style={styles.deepQuizTitle}>Couple Situations & Decision Analysis 🧠</Text>
+          <Text style={styles.deepQuizTitle}>Spin the Couple Love Wheel 🎡</Text>
           <Text style={styles.deepQuizSub}>
-            Play first & send invitation to {partnerName}. Once both complete, reveal your synchronized % compatibility and breakdown!
+            Take turns spinning to pick exciting surprises, spicy romantic dares, massage passes, or cozy movie picks!
           </Text>
 
-          <View style={styles.deepQuizModulesScroll}>
-            {DEEP_COMPATIBILITY_QUIZZES.map((quiz) => (
-              <TouchableOpacity
-                key={quiz.id}
-                style={styles.deepQuizCard}
-                onPress={() => handleLaunchDeepQuiz(quiz)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.deepQuizEmoji}>{quiz.iconEmoji}</Text>
-                <Text style={styles.deepQuizCardTitle} numberOfLines={1}>{quiz.title}</Text>
-                <Text style={styles.deepQuizCardTagline} numberOfLines={2}>{quiz.tagline}</Text>
-                <View style={styles.deepQuizFooter}>
-                  <Text style={styles.deepQuizCount}>{quiz.totalQuestions} Questions</Text>
-                  <View style={styles.playQuizPill}>
-                    <Text style={styles.playQuizText}>Start Quiz 🚀</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <TouchableOpacity
+            style={styles.featuredPlayBtn}
+            onPress={() => setShowWheelModal(true)}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.featuredPlayText}>Spin The Wheel Now 🎡</Text>
+          </TouchableOpacity>
         </RomanticCard>
 
         {/* 2. 30 ARCADE GAMES GRID */}
@@ -401,10 +388,23 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     lineHeight: 18,
     marginTop: 2,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
-  deepQuizModulesScroll: {
-    gap: Spacing.sm,
+  featuredPlayBtn: {
+    backgroundColor: Colors.primary,
+    borderRadius: Spacing.borderRadius.lg,
+    paddingVertical: 11,
+    alignItems: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  featuredPlayText: {
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.bold,
+    color: '#FFFFFF',
   },
   deepQuizCard: {
     backgroundColor: '#FFFFFF',

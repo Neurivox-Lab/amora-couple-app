@@ -40,8 +40,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await api.init();
       const currentUser = api.getCurrentUser();
       const currentCouple = api.getCurrentCouple();
-      setUser(currentUser);
-      setCouple(currentCouple);
+
+      // If user had an old legacy mock session with 428 days or placeholder email, clear it so Register/Login shows first
+      if (currentCouple?.daysTogether === 428 || (currentUser && (!currentUser.phone || currentUser.email === 'srinija@amora.love'))) {
+        await Storage.removeItem('current_user');
+        await Storage.removeItem('current_couple');
+        await Storage.removeItem('auth_token');
+        setUser(null);
+        setCouple(null);
+      } else {
+        setUser(currentUser);
+        setCouple(currentCouple);
+      }
     } catch (e) {
       console.warn('Error initializing session', e);
     } finally {

@@ -28,16 +28,15 @@ export const mockUser2 = {
 
 export const mockCouple: Couple = {
   id: 101,
-  coupleCode: 'AM-8X7K',
+  coupleCode: 'CF-8X7K',
   partner1: mockUser1,
   partner2: mockUser2,
-  relationshipStartDate: '2023-01-12',
-  anniversaryDate: '2027-01-12',
-  streakCount: 14,
-  daysTogether: 428,
+  relationshipStartDate: new Date().toISOString(),
+  streakCount: 1,
+  daysTogether: 1,
   moodPartner1: 'in_love',
   moodPartner2: 'happy',
-  totalHearts: 480,
+  totalHearts: 0,
   status: 'ACTIVE',
 };
 
