@@ -184,9 +184,9 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setShowThinkingOfYouModal(true);
   };
 
-  const partner1Name = couple?.partner1?.nickname || couple?.partner1?.name || 'Srinija';
-  const partner2Name = couple?.partner2?.nickname || couple?.partner2?.name || 'Partner';
-  const isUser1 = user?.id === 1;
+  const isUser1 = user?.id === couple?.partner1?.id;
+  const partner1Name = couple?.partner1?.nickname || couple?.partner1?.name || (isUser1 ? user?.name : 'Partner 1') || 'You';
+  const partner2Name = couple?.partner2?.nickname || couple?.partner2?.name || (!isUser1 ? user?.name : 'Partner') || 'Partner';
 
   const myMood = isUser1 ? couple?.moodPartner1 : couple?.moodPartner2;
   const partnerName = isUser1 ? partner2Name : partner1Name;

@@ -42,8 +42,9 @@ export const UsScreen: React.FC = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
 
-  const partner1Name = couple?.partner1?.nickname || couple?.partner1?.name || 'Srinija';
-  const partner2Name = couple?.partner2?.nickname || couple?.partner2?.name || 'Partner';
+  const isUser1 = user?.id === couple?.partner1?.id;
+  const partner1Name = couple?.partner1?.nickname || couple?.partner1?.name || (isUser1 ? user?.name : 'Partner 1') || 'You';
+  const partner2Name = couple?.partner2?.nickname || couple?.partner2?.name || (!isUser1 ? user?.name : 'Partner') || 'Partner';
 
   const handleLogout = async () => {
     triggerHaptic('heavy');
