@@ -1,0 +1,228 @@
+import { Couple, DailyQuestion, Game, Memory, LoveNote, BucketListItem, DatePlan } from '../types';
+
+export const mockUser1 = {
+  id: 1,
+  name: 'Srinija',
+  nickname: 'Sri ❤️',
+  phone: '+919876543210',
+  email: 'srinija@amora.love',
+  avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Srinija&gender=female',
+  birthday: '2000-01-16',
+  loveLanguage: 'Quality Time',
+  coupleId: 101,
+  currentMood: 'in_love',
+};
+
+export const mockUser2 = {
+  id: 2,
+  name: 'Partner',
+  nickname: 'Babe 🥰',
+  phone: '+919876543211',
+  email: 'partner@amora.love',
+  avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&gender=male',
+  birthday: '1999-08-22',
+  loveLanguage: 'Physical Touch',
+  coupleId: 101,
+  currentMood: 'happy',
+};
+
+export const mockCouple: Couple = {
+  id: 101,
+  coupleCode: 'AM-8X7K',
+  partner1: mockUser1,
+  partner2: mockUser2,
+  relationshipStartDate: '2023-01-12',
+  anniversaryDate: '2027-01-12',
+  streakCount: 14,
+  daysTogether: 428,
+  moodPartner1: 'in_love',
+  moodPartner2: 'happy',
+  totalHearts: 480,
+  status: 'ACTIVE',
+};
+
+export const mockDailyQuestion: DailyQuestion = {
+  id: 1,
+  prompt: 'What was one moment this past week when your partner made your heart melt?',
+  category: 'LOVE',
+  activeDate: new Date().toISOString().split('T')[0],
+  partner1Answer: 'When you brought me hot chocolate without me asking while I was working late ☕❤️',
+  partner2Answer: 'Watching you laugh so hard at the movie that you snorted 🥰',
+  isAnsweredByMe: true,
+  isAnsweredByPartner: true,
+  bothAnswered: true,
+};
+
+export const mockGames: Game[] = [
+  {
+    id: 1,
+    title: 'Would You Rather: Romantic & Future',
+    description: 'Explore dream houses, wedding vibes, and bucket list adventures.',
+    gameType: 'WOULD_YOU_RATHER',
+    category: 'ROMANCE',
+    iconName: 'Heart',
+    gradientStart: '#FF6B8B',
+    gradientEnd: '#FF8E53',
+    questionCount: 8,
+  },
+  {
+    id: 2,
+    title: 'Would You Rather: Late Night & Spicy 🔥',
+    description: 'Flirty dilemmas, sensual dares, and playful confessions.',
+    gameType: 'WOULD_YOU_RATHER',
+    category: 'SPICY',
+    iconName: 'Flame',
+    gradientStart: '#FA709A',
+    gradientEnd: '#FEE140',
+    questionCount: 6,
+  },
+  {
+    id: 3,
+    title: 'Who Is More Likely To?',
+    description: 'Vote on who takes longer to get ready, gets lost, or buys silly things.',
+    gameType: 'WHO_IS_MORE_LIKELY',
+    category: 'FUN',
+    iconName: 'Sparkles',
+    gradientStart: '#4FACFE',
+    gradientEnd: '#00F2FE',
+    questionCount: 10,
+  },
+  {
+    id: 4,
+    title: 'Truth or Dare: Couple Edition',
+    description: 'Intimate truth questions and spicy real-time romantic dares.',
+    gameType: 'TRUTH_OR_DARE',
+    category: 'ROMANCE',
+    iconName: 'Zap',
+    gradientStart: '#A18CD1',
+    gradientEnd: '#FBC2EB',
+    questionCount: 8,
+  },
+  {
+    id: 5,
+    title: 'How Well Do You Know Me?',
+    description: 'Test your partner on your favorite memories, pet peeves, and tastes.',
+    gameType: 'GUESS_MY_ANSWER',
+    category: 'DEEP',
+    iconName: 'Smile',
+    gradientStart: '#FF9A8B',
+    gradientEnd: '#FF6A88',
+    questionCount: 6,
+  },
+];
+
+export const mockMemories: Memory[] = [
+  {
+    id: 1,
+    title: 'Goa Beach Sunset Trip 🌅',
+    description: 'Walking barefoot on the sand, drinking coconut water, and watching the sun dip into the ocean together.',
+    memoryDate: '2026-03-14',
+    locationName: 'Palolem Beach, Goa',
+    mediaUrls: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop',
+    moodTag: 'Trip',
+    isFavorite: true,
+    createdAt: '2026-03-15T10:00:00Z',
+  },
+  {
+    id: 2,
+    title: 'Our 1st Anniversary Dinner 🕯️',
+    description: 'Rooftop candlelit dinner under the stars. You looked breathtaking in black!',
+    memoryDate: '2026-01-12',
+    locationName: 'Skyline Terrace Lounge',
+    mediaUrls: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop',
+    moodTag: 'Milestone',
+    isFavorite: true,
+    createdAt: '2026-01-13T09:30:00Z',
+  },
+  {
+    id: 3,
+    title: 'Rainy Day Coffee & Board Games ☕',
+    description: 'Stuck indoors during heavy monsoon rains making grilled cheese and playing Scrabble.',
+    memoryDate: '2025-08-20',
+    locationName: 'Our Cozy Living Room',
+    mediaUrls: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&auto=format&fit=crop',
+    moodTag: 'Romantic',
+    isFavorite: false,
+    createdAt: '2025-08-21T14:00:00Z',
+  },
+];
+
+export const mockLoveNotes: LoveNote[] = [
+  {
+    id: 1,
+    sender: mockUser1,
+    receiver: mockUser2,
+    category: 'OPEN_WHEN',
+    title: '🌙 Open When You Have a Tough Day at Work',
+    message: 'Hey my love, take a deep breath and relax your shoulders. Whatever happened today does not define your greatness. I am so proud of you, and when you get home, warm hugs and your favorite snack are waiting. I love you endlessly! ❤️',
+    unlockCondition: 'SAD',
+    isOpened: false,
+    paperTheme: 'rose',
+    createdAt: '2026-08-10T12:00:00Z',
+  },
+  {
+    id: 2,
+    sender: mockUser2,
+    receiver: mockUser1,
+    category: 'LOVE_NOTE',
+    title: '🥰 Just Because...',
+    message: 'Just wanted to say you are the best thing that ever happened to me. Thank you for always making me laugh even when I am in a grumpy mood. Forever grateful for you!',
+    isOpened: true,
+    openedAt: '2026-08-28T18:00:00Z',
+    paperTheme: 'lavender',
+    createdAt: '2026-08-28T17:30:00Z',
+  },
+];
+
+export const mockBucketList: BucketListItem[] = [
+  {
+    id: 1,
+    title: 'Visit Kyoto, Japan during Cherry Blossom Season 🌸',
+    category: 'TRAVEL',
+    isCompleted: false,
+    notes: 'Rent traditional yukatas and walk through bamboo groves.',
+  },
+  {
+    id: 2,
+    title: 'Take an authentic Italian Pasta & Pizza Cooking Class 🍝',
+    category: 'FOOD',
+    isCompleted: true,
+    completedAt: '2026-02-14',
+    photoUrl: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop',
+    notes: 'We made fettuccine from scratch and made a total mess!',
+  },
+  {
+    id: 3,
+    title: 'Go Hot Air Ballooning in Cappadocia / Jaipur 🎈',
+    category: 'EXPERIENCES',
+    isCompleted: false,
+    notes: 'Watch the sunrise from above the clouds.',
+  },
+  {
+    id: 4,
+    title: 'Build a giant cozy blanket fort in the living room 🏰',
+    category: 'ROMANCE',
+    isCompleted: true,
+    completedAt: '2025-11-20',
+    notes: 'Hung fairy lights and watched Harry Potter marathon.',
+  },
+];
+
+export const mockDatePlans: DatePlan[] = [
+  {
+    id: 1,
+    title: '✨ Twilight Sunset & Candlelight Coffee',
+    mood: 'Romantic',
+    budgetCategory: '₹500–1500',
+    duration: 'Half day',
+    estimatedCost: 1200,
+    status: 'PLANNED',
+    itineraryJson: JSON.stringify([
+      { time: '04:30 PM', title: 'Cozy Garden Cafe', desc: 'Warm vanilla lattes and cinnamon rolls.' },
+      { time: '05:45 PM', title: 'Sunset Stroll & Handholding', desc: 'Scenic golden hour walk.' },
+      { time: '06:30 PM', title: 'Polaroid Selfies', desc: 'Snap 3 candid couple pictures.' },
+      { time: '07:30 PM', title: 'Wood-fired Pizza Dinner', desc: 'Shared thin crust pizza with jazz music.' },
+    ]),
+    createdAt: '2026-08-30T10:00:00Z',
+  },
+];
