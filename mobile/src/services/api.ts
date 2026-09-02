@@ -114,17 +114,18 @@ class ApiClient {
     const body = options.body ? JSON.parse(options.body as string) : {};
 
     if (endpoint === '/auth/register') {
+      const rawName = body.name?.trim() || 'User';
       const newUser: User = {
         id: Date.now(),
-        name: body.name || 'User',
-        nickname: body.nickname || 'My Sweetheart',
-        email: body.email,
-        phone: body.phone,
+        name: rawName,
+        nickname: body.nickname?.trim() || rawName,
+        email: body.email?.trim(),
+        phone: body.phone?.trim(),
         currentMood: 'in_love',
         heartsCount: 50,
       };
       this.currentUser = newUser;
-      const code = 'AM-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+      const code = 'CF-' + Math.random().toString(36).substring(2, 6).toUpperCase();
       this.currentCouple = {
         id: Date.now(),
         coupleCode: code,
@@ -146,10 +147,31 @@ class ApiClient {
     }
 
     if (endpoint === '/auth/login') {
-      const isPartner2 = body.email?.includes('partner') || body.name?.includes('Partner') || body.identifier?.includes('partner');
-      this.currentUser = isPartner2 ? { ...mockUser2, name: body.name || mockUser2.name } : { ...mockUser1, name: body.name || mockUser1.name };
-      this.currentCouple = { ...mockCouple, status: 'ACTIVE' };
-      this.setToken('mock-jwt-token-12345');
+      const id = (body.identifier || body.email || body.name || 'User').trim();
+      const savedUser = await Storage.getItem<User>('current_user');
+      const savedCouple = await Storage.getItem<Couple>('current_couple');
+
+      let loggedInUser: User;
+      if (savedUser && (savedUser.email?.toLowerCase() === id.toLowerCase() || savedUser.phone === id || savedUser.name.toLowerCase() === id.toLowerCase())) {
+        loggedInUser = savedUser;
+      } else {
+        const isPartner2 = id.toLowerCase().includes('partner');
+        const displayName = id.includes('@') ? id.split('@')[0] : id;
+        const formattedName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
+        loggedInUser = {
+          id: isPartner2 ? 2 : Date.now(),
+          name: formattedName,
+          nickname: formattedName,
+          email: id.includes('@') ? id : undefined,
+          phone: !id.includes('@') ? id : undefined,
+          currentMood: 'in_love',
+          heartsCount: 50,
+        };
+      }
+
+      this.currentUser = loggedInUser;
+      this.currentCouple = savedCouple || { ...mockCouple, partner1: loggedInUser, status: 'ACTIVE' };
+      this.setToken('mock-jwt-token-' + Date.now());
       await Storage.setItem('current_user', this.currentUser);
       await Storage.setItem('current_couple', this.currentCouple);
       return { token: this.token, user: this.currentUser, couple: this.currentCouple } as unknown as T;

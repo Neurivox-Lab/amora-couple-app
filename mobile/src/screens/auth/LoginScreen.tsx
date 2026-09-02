@@ -69,12 +69,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         )}
 
         <View style={styles.form}>
-          <Text style={styles.label}>Email or Phone Number</Text>
+          <Text style={styles.label}>Email, Phone Number or Name</Text>
           <View style={styles.inputContainer}>
             <User size={18} color={Colors.textSecondary} />
             <TextInput
               style={styles.input}
-              placeholder="srinija@amora.love"
+              placeholder="e.g. srinija@gmail.com or 9876543210"
               placeholderTextColor={Colors.textMuted}
               value={identifier}
               onChangeText={setIdentifier}
@@ -82,7 +82,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             />
           </View>
 
-          <Text style={styles.label}>Password</Text>
+          <Text style={styles.label}>Password (optional)</Text>
           <View style={styles.inputContainer}>
             <Lock size={18} color={Colors.textSecondary} />
             <TextInput
@@ -120,7 +120,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         </View>
 
         <View style={styles.footerRow}>
-          <Text style={styles.footerText}>New to Amora? </Text>
+          <Text style={styles.footerText}>New to Couple-Friendly? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Register')}>
             <Text style={styles.footerLink}>Create Account</Text>
           </TouchableOpacity>

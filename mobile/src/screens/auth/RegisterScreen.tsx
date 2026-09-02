@@ -110,7 +110,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
             <Mail size={18} color={Colors.textSecondary} />
             <TextInput
               style={styles.input}
-              placeholder="you@amora.love"
+              placeholder="you@couplefriendly.love"
               placeholderTextColor={Colors.textMuted}
               value={email}
               onChangeText={setEmail}
