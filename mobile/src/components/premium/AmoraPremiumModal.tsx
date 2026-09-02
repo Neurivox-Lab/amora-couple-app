@@ -74,7 +74,7 @@ export const AmoraPremiumModal: React.FC = () => {
                 <Sparkles size={12} color={Colors.primaryDark} />
                 <Text style={styles.badgePillText}>LIFETIME COUPLE PASS</Text>
               </View>
-              <Text style={styles.mainTitle}>Amora VIP Couple 👑</Text>
+              <Text style={styles.mainTitle}>Couple-Friendly VIP 👑</Text>
               <Text style={styles.subTitle}>
                 {lockedFeatureName
                   ? `Unlock ${lockedFeatureName} and all 30 games, 500 quizzes & secret tools for both of you!`
@@ -160,12 +160,12 @@ export const AmoraPremiumModal: React.FC = () => {
             {successCelebration ? (
               <View style={styles.successBox}>
                 <Text style={styles.successEmoji}>🎉👑💖</Text>
-                <Text style={styles.successText}>Welcome to Amora VIP!</Text>
+                <Text style={styles.successText}>Welcome to Couple-Friendly VIP!</Text>
                 <Text style={styles.successSub}>All 30 games, 500 quizzes & tools unlocked!</Text>
               </View>
             ) : (
               <GradientButton
-                title={isProcessing ? "Activating VIP Pass... ✨" : `Get Amora VIP Pass • ${priceDisplay}`}
+                title={isProcessing ? "Activating VIP Pass... ✨" : `Get Couple-Friendly VIP • ${priceDisplay}`}
                 onPress={handleSubscribe}
                 loading={isProcessing}
                 style={styles.payBtn}

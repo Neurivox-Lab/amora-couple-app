@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Amora: Couple-Friendly Space & Games",
-    "slug": "amora-couple-app",
+    "name": "Couple-Friendly: Relationship Space & Games",
+    "slug": "couple-friendly-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,14 +14,14 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.amora.coupleapp"
+      "bundleIdentifier": "com.couplefriendly.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFF8FA"
       },
-      "package": "com.amora.coupleapp",
+      "package": "com.couplefriendly.app",
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",

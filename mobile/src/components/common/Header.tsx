@@ -58,7 +58,7 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, showStats = tru
           ) : (
             <View style={styles.brandContainer}>
               <View style={styles.brandTitleRow}>
-                <Text style={styles.brandTitle}>Amora <Text style={styles.heartIcon}>❤️</Text></Text>
+                <Text style={styles.brandTitle}>Couple-Friendly <Text style={styles.heartIcon}>❤️</Text></Text>
                 {isPremium && (
                   <View style={styles.vipTagPill}>
                     <Crown size={10} color="#8A5D00" />

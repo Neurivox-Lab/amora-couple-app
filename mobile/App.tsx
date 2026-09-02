@@ -37,7 +37,7 @@ const MainContent: React.FC = () => {
         style={[styles.floatingLoveBtn, isPremium && styles.floatingVipBtn]}
         onPress={() => {
           if (!isPremium) {
-            openPaywall('Amora VIP Couple Pass');
+            openPaywall('Couple-Friendly VIP Pass');
           } else {
             triggerHaptic('heavy');
             triggerHeartCelebration();

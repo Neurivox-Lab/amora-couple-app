@@ -58,7 +58,7 @@ export const PremiumProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const openPaywall = (featureName?: string) => {
     triggerHaptic('medium');
-    setLockedFeatureName(featureName || 'Amora VIP Couple Pass');
+    setLockedFeatureName(featureName || 'Couple-Friendly VIP Pass');
     setShowPaywall(true);
   };
 

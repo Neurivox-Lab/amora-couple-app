@@ -31,8 +31,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
 
       {/* Brand & Value Proposition */}
       <View style={styles.textSection}>
-        <Text style={styles.title}>Amora <Text style={styles.heart}>❤️</Text></Text>
-        <Text style={styles.subtitle}>Couple-Friendly Space & Games</Text>
+        <Text style={styles.title}>Couple-Friendly <Text style={styles.heart}>❤️</Text></Text>
+        <Text style={styles.subtitle}>Our Private Couple Space & Games</Text>
         <Text style={styles.tagline}>
           A private world for you & your partner to play seductive games, sync moods, plan dreamy dates, and preserve memories together.
         </Text>
