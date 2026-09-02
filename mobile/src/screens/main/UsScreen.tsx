@@ -45,22 +45,9 @@ export const UsScreen: React.FC = () => {
   const partner1Name = couple?.partner1?.nickname || couple?.partner1?.name || 'Srinija';
   const partner2Name = couple?.partner2?.nickname || couple?.partner2?.name || 'Partner';
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Log Out',
-      'Are you sure you want to log out of your couple space?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log Out',
-          style: 'destructive',
-          onPress: () => {
-            triggerHaptic('medium');
-            logout();
-          },
-        },
-      ]
-    );
+  const handleLogout = async () => {
+    triggerHaptic('heavy');
+    await logout();
   };
 
   return (

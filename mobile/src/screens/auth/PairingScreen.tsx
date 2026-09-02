@@ -14,7 +14,7 @@ interface PairingScreenProps {
 }
 
 export const PairingScreen: React.FC<PairingScreenProps> = ({ navigation }) => {
-  const { user } = useAuth();
+  const { user, refreshCouple } = useAuth();
   const { couple, pairPartner } = useCouple();
   const [mode, setMode] = useState<'INVITE' | 'ENTER'>('INVITE');
   const [partnerCode, setPartnerCode] = useState('');
@@ -30,8 +30,9 @@ export const PairingScreen: React.FC<PairingScreenProps> = ({ navigation }) => {
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const handlePairWithCode = async () => {
-    if (!partnerCode.trim()) {
+  const handlePairWithCode = async (codeToUse?: string) => {
+    const code = codeToUse || partnerCode.trim();
+    if (!code) {
       setError('Please enter your partner’s couple code');
       return;
     }
@@ -39,8 +40,8 @@ export const PairingScreen: React.FC<PairingScreenProps> = ({ navigation }) => {
     setLoading(true);
     triggerHaptic('heartbeat');
     try {
-      await pairPartner(partnerCode.trim());
-      // Paired successfully!
+      await pairPartner(code);
+      await refreshCouple();
     } catch (e: any) {
       setError(e.message || 'Invalid code. Check with your partner.');
     } finally {
@@ -124,6 +125,16 @@ export const PairingScreen: React.FC<PairingScreenProps> = ({ navigation }) => {
               <View style={styles.pulsingDot} />
               <Text style={styles.waitingText}>Waiting for partner to enter code...</Text>
             </View>
+
+            {/* Instant Demo Pair Simulator Button */}
+            <TouchableOpacity
+              style={styles.instantDemoPairBtn}
+              onPress={() => handlePairWithCode('AM-DEMO')}
+              activeOpacity={0.8}
+            >
+              <Sparkles size={14} color={Colors.primaryDark} />
+              <Text style={styles.instantDemoPairText}>Simulate Partner Connected (Instant Pair 💕)</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.cardSection}>
@@ -356,5 +367,23 @@ const styles = StyleSheet.create({
   },
   connectBtn: {
     width: '100%',
+  },
+  instantDemoPairBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#FFEBF2',
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Spacing.borderRadius.full,
+    marginTop: Spacing.md,
+    borderWidth: 1,
+    borderColor: '#FFCCD8',
+  },
+  instantDemoPairText: {
+    fontSize: Typography.sizes.xs,
+    fontWeight: Typography.weights.bold,
+    color: Colors.primaryDark,
   },
 });

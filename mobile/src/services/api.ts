@@ -28,8 +28,8 @@ const BASE_URL = 'http://localhost:8080/api';
 
 class ApiClient {
   private token: string | null = null;
-  private currentUser: User = mockUser1;
-  private currentCouple: Couple = mockCouple;
+  private currentUser: User | null = null;
+  private currentCouple: Couple | null = null;
   private memories: Memory[] = [...mockMemories];
   private loveNotes: LoveNote[] = [...mockLoveNotes];
   private bucketList: BucketListItem[] = [...mockBucketList];
@@ -73,11 +73,11 @@ class ApiClient {
     return this.currentUser;
   }
 
-  getCurrentUser(): User {
+  getCurrentUser(): User | null {
     return this.currentUser;
   }
 
-  getCurrentCouple(): Couple {
+  getCurrentCouple(): Couple | null {
     return this.currentCouple;
   }
 
@@ -113,12 +113,46 @@ class ApiClient {
     const method = options.method || 'GET';
     const body = options.body ? JSON.parse(options.body as string) : {};
 
-    if (endpoint === '/auth/login' || endpoint === '/auth/register') {
-      const isPartner2 = body.email?.includes('partner') || body.name?.includes('Partner');
+    if (endpoint === '/auth/register') {
+      const newUser: User = {
+        id: Date.now(),
+        name: body.name || 'User',
+        nickname: body.nickname || 'My Sweetheart',
+        email: body.email,
+        phone: body.phone,
+        currentMood: 'in_love',
+        heartsCount: 50,
+      };
+      this.currentUser = newUser;
+      const code = 'AM-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+      this.currentCouple = {
+        id: Date.now(),
+        coupleCode: code,
+        partner1: newUser,
+        partner2: undefined,
+        status: 'PENDING',
+        relationshipStartDate: new Date().toISOString(),
+        daysTogether: 1,
+        streakCount: 1,
+        totalHearts: 50,
+        moodPartner1: 'in_love',
+        moodPartner2: undefined,
+        createdAt: new Date().toISOString(),
+      };
+      this.setToken('mock-jwt-token-' + Date.now());
+      await Storage.setItem('current_user', this.currentUser);
+      await Storage.setItem('current_couple', this.currentCouple);
+      return { token: this.token, user: this.currentUser, couple: this.currentCouple } as unknown as T;
+    }
+
+    if (endpoint === '/auth/login') {
+      const isPartner2 = body.email?.includes('partner') || body.name?.includes('Partner') || body.identifier?.includes('partner');
       this.currentUser = isPartner2 ? { ...mockUser2, name: body.name || mockUser2.name } : { ...mockUser1, name: body.name || mockUser1.name };
+      this.currentCouple = { ...mockCouple, status: 'ACTIVE' };
       this.setToken('mock-jwt-token-12345');
       await Storage.setItem('current_user', this.currentUser);
-      return { token: 'mock-jwt-token-12345', user: this.currentUser, couple: this.currentCouple } as unknown as T;
+      await Storage.setItem('current_couple', this.currentCouple);
+      return { token: this.token, user: this.currentUser, couple: this.currentCouple } as unknown as T;
     }
 
     if (endpoint === '/couples/status') {
@@ -130,7 +164,22 @@ class ApiClient {
     }
 
     if (endpoint === '/couples/pair') {
-      this.currentCouple = { ...this.currentCouple, status: 'ACTIVE' };
+      const partner2User: User = {
+        id: Date.now() + 1,
+        name: 'Partner',
+        nickname: 'My Love',
+        currentMood: 'happy',
+        heartsCount: 50,
+      };
+      if (this.currentCouple) {
+        this.currentCouple = {
+          ...this.currentCouple,
+          partner2: partner2User,
+          status: 'ACTIVE',
+        };
+      } else {
+        this.currentCouple = { ...mockCouple, status: 'ACTIVE' };
+      }
       await Storage.setItem('current_couple', this.currentCouple);
       return this.currentCouple as unknown as T;
     }
