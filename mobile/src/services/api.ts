@@ -86,28 +86,32 @@ class ApiClient {
     partner1Nickname?: string;
     partner2Name: string;
     partner2Nickname?: string;
+    partner1Email?: string;
+    partner2Email?: string;
     daysTogether?: number;
   }) {
-    const p1Name = params.partner1Name?.trim() || 'Srinija';
+    const p1Name = params.partner1Name?.trim() || 'Partner 1';
     const p1Nick = params.partner1Nickname?.trim() || p1Name;
-    const p2Name = params.partner2Name?.trim() || 'Partner';
+    const p2Name = params.partner2Name?.trim() || 'Partner 2';
     const p2Nick = params.partner2Nickname?.trim() || p2Name;
-    const days = params.daysTogether || 428;
+    const days = params.daysTogether !== undefined ? Math.max(1, params.daysTogether) : 1;
 
     const user1: User = {
-      id: 1,
+      id: Date.now(),
       name: p1Name,
       nickname: p1Nick,
+      email: params.partner1Email || `${p1Name.toLowerCase().replace(/\s+/g, '')}@couplefriendly.app`,
       currentMood: 'in_love',
-      heartsCount: 100,
+      heartsCount: 0,
     };
 
     const user2: User = {
-      id: 2,
+      id: Date.now() + 1,
       name: p2Name,
       nickname: p2Nick,
+      email: params.partner2Email || `${p2Name.toLowerCase().replace(/\s+/g, '')}@couplefriendly.app`,
       currentMood: 'in_love',
-      heartsCount: 100,
+      heartsCount: 0,
     };
 
     const couple: Couple = {
@@ -116,10 +120,10 @@ class ApiClient {
       partner1: user1,
       partner2: user2,
       status: 'ACTIVE',
-      relationshipStartDate: new Date(Date.now() - days * 86400000).toISOString(),
+      relationshipStartDate: new Date(Date.now() - (days - 1) * 86400000).toISOString(),
       daysTogether: days,
-      streakCount: Math.min(days, 14),
-      totalHearts: 120,
+      streakCount: 1,
+      totalHearts: 0,
       moodPartner1: 'in_love',
       moodPartner2: 'in_love',
       createdAt: new Date().toISOString(),
@@ -127,9 +131,24 @@ class ApiClient {
 
     this.currentUser = user1;
     this.currentCouple = couple;
+    this.memories = [];
+    this.loveNotes = [];
     this.setToken('mock-jwt-direct-' + Date.now());
+
+    // Save to multi-user database
+    const usersDb = (await Storage.getItem<Record<string, User>>('users_db')) || {};
+    usersDb[user1.email!] = user1;
+    usersDb[user2.email!] = user2;
+    await Storage.setItem('users_db', usersDb);
+
+    const couplesDb = (await Storage.getItem<Record<string, Couple>>('couples_db')) || {};
+    couplesDb[couple.coupleCode] = couple;
+    await Storage.setItem('couples_db', couplesDb);
+
     await Storage.setItem('current_user', this.currentUser);
     await Storage.setItem('current_couple', this.currentCouple);
+    await Storage.setItem('saved_memories', []);
+    await Storage.setItem('saved_notes', []);
     return { token: this.token, user: this.currentUser, couple: this.currentCouple };
   }
 
@@ -167,16 +186,24 @@ class ApiClient {
 
     if (endpoint === '/auth/register') {
       const rawName = body.name?.trim() || 'User';
+      const rawEmail = (body.email?.trim() || `${rawName.toLowerCase()}@couplefriendly.app`).toLowerCase();
       const newUser: User = {
         id: Date.now(),
         name: rawName,
         nickname: body.nickname?.trim() || rawName,
-        email: body.email?.trim(),
+        email: rawEmail,
         phone: body.phone?.trim(),
         currentMood: 'in_love',
-        heartsCount: 50,
+        heartsCount: 0,
       };
       this.currentUser = newUser;
+      this.memories = [];
+      this.loveNotes = [];
+
+      const usersDb = (await Storage.getItem<Record<string, User>>('users_db')) || {};
+      usersDb[rawEmail] = newUser;
+      await Storage.setItem('users_db', usersDb);
+
       const code = 'CF-' + Math.random().toString(36).substring(2, 6).toUpperCase();
       this.currentCouple = {
         id: Date.now(),
@@ -187,42 +214,79 @@ class ApiClient {
         relationshipStartDate: new Date().toISOString(),
         daysTogether: 1,
         streakCount: 1,
-        totalHearts: 50,
+        totalHearts: 0,
         moodPartner1: 'in_love',
         moodPartner2: undefined,
         createdAt: new Date().toISOString(),
       };
+
+      const couplesDb = (await Storage.getItem<Record<string, Couple>>('couples_db')) || {};
+      couplesDb[code] = this.currentCouple;
+      await Storage.setItem('couples_db', couplesDb);
+
       this.setToken('mock-jwt-token-' + Date.now());
       await Storage.setItem('current_user', this.currentUser);
       await Storage.setItem('current_couple', this.currentCouple);
+      await Storage.setItem('saved_memories', []);
+      await Storage.setItem('saved_notes', []);
       return { token: this.token, user: this.currentUser, couple: this.currentCouple } as unknown as T;
     }
 
     if (endpoint === '/auth/login') {
-      const id = (body.identifier || body.email || body.name || 'User').trim();
-      const savedUser = await Storage.getItem<User>('current_user');
-      const savedCouple = await Storage.getItem<Couple>('current_couple');
+      const id = (body.identifier || body.email || body.name || 'User').trim().toLowerCase();
+      const usersDb = (await Storage.getItem<Record<string, User>>('users_db')) || {};
+      const couplesDb = (await Storage.getItem<Record<string, Couple>>('couples_db')) || {};
 
-      let loggedInUser: User;
-      if (savedUser && (savedUser.email?.toLowerCase() === id.toLowerCase() || savedUser.phone === id || savedUser.name.toLowerCase() === id.toLowerCase())) {
-        loggedInUser = savedUser;
-      } else {
-        const isPartner2 = id.toLowerCase().includes('partner');
+      let loggedInUser: User | undefined = usersDb[id];
+      if (!loggedInUser) {
+        // Search by name
+        loggedInUser = Object.values(usersDb).find(
+          u => u.name.toLowerCase() === id || u.nickname?.toLowerCase() === id
+        );
+      }
+
+      if (!loggedInUser) {
         const displayName = id.includes('@') ? id.split('@')[0] : id;
         const formattedName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
         loggedInUser = {
-          id: isPartner2 ? 2 : Date.now(),
+          id: Date.now(),
           name: formattedName,
           nickname: formattedName,
-          email: id.includes('@') ? id : undefined,
-          phone: !id.includes('@') ? id : undefined,
+          email: id.includes('@') ? id : `${displayName}@couplefriendly.app`,
           currentMood: 'in_love',
-          heartsCount: 50,
+          heartsCount: 0,
         };
+        usersDb[loggedInUser.email!] = loggedInUser;
+        await Storage.setItem('users_db', usersDb);
       }
 
       this.currentUser = loggedInUser;
-      this.currentCouple = savedCouple || { ...mockCouple, partner1: loggedInUser, status: 'ACTIVE' };
+
+      // Find couple belonging to this user
+      let matchedCouple = Object.values(couplesDb).find(
+        c => c.partner1?.id === loggedInUser!.id || c.partner2?.id === loggedInUser!.id || c.partner1?.email === loggedInUser!.email || c.partner2?.email === loggedInUser!.email
+      );
+
+      if (!matchedCouple) {
+        matchedCouple = {
+          id: Date.now(),
+          coupleCode: 'CF-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+          partner1: loggedInUser,
+          partner2: undefined,
+          status: 'ACTIVE',
+          relationshipStartDate: new Date().toISOString(),
+          daysTogether: 1,
+          streakCount: 1,
+          totalHearts: 0,
+          moodPartner1: 'in_love',
+          moodPartner2: 'in_love',
+          createdAt: new Date().toISOString(),
+        };
+        couplesDb[matchedCouple.coupleCode] = matchedCouple;
+        await Storage.setItem('couples_db', couplesDb);
+      }
+
+      this.currentCouple = matchedCouple;
       this.setToken('mock-jwt-token-' + Date.now());
       await Storage.setItem('current_user', this.currentUser);
       await Storage.setItem('current_couple', this.currentCouple);
@@ -238,21 +302,42 @@ class ApiClient {
     }
 
     if (endpoint === '/couples/pair') {
-      const partner2User: User = {
-        id: Date.now() + 1,
-        name: 'Partner',
-        nickname: 'My Love',
-        currentMood: 'happy',
-        heartsCount: 50,
-      };
-      if (this.currentCouple) {
-        this.currentCouple = {
-          ...this.currentCouple,
+      const code = (body.coupleCode || body.code || '').trim().toUpperCase();
+      const couplesDb = (await Storage.getItem<Record<string, Couple>>('couples_db')) || {};
+
+      let targetCouple = couplesDb[code] || this.currentCouple;
+      if (targetCouple) {
+        const partner2User: User = this.currentUser || {
+          id: Date.now(),
+          name: body.partnerName || 'Partner',
+          nickname: body.partnerNickname || 'My Love',
+          email: body.email || 'partner@couplefriendly.app',
+          currentMood: 'happy',
+          heartsCount: 0,
+        };
+        targetCouple = {
+          ...targetCouple,
           partner2: partner2User,
           status: 'ACTIVE',
         };
+        couplesDb[targetCouple.coupleCode] = targetCouple;
+        await Storage.setItem('couples_db', couplesDb);
+        this.currentCouple = targetCouple;
       } else {
-        this.currentCouple = { ...mockCouple, status: 'ACTIVE' };
+        this.currentCouple = {
+          id: Date.now(),
+          coupleCode: code || 'CF-8X7K',
+          partner1: this.currentUser || { id: 1, name: 'Partner 1', nickname: 'My Love', currentMood: 'in_love', heartsCount: 0 },
+          partner2: { id: 2, name: 'Partner 2', nickname: 'Sweetheart', currentMood: 'happy', heartsCount: 0 },
+          status: 'ACTIVE',
+          relationshipStartDate: new Date().toISOString(),
+          daysTogether: 1,
+          streakCount: 1,
+          totalHearts: 0,
+          moodPartner1: 'in_love',
+          moodPartner2: 'in_love',
+          createdAt: new Date().toISOString(),
+        };
       }
       await Storage.setItem('current_couple', this.currentCouple);
       return this.currentCouple as unknown as T;
