@@ -9,6 +9,13 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (identifier: string, password?: string) => Promise<void>;
+  loginCoupleDirect: (params: {
+    partner1Name: string;
+    partner1Nickname?: string;
+    partner2Name: string;
+    partner2Nickname?: string;
+    daysTogether?: number;
+  }) => Promise<void>;
   register: (data: any) => Promise<void>;
   logout: () => Promise<void>;
   switchUserRole: (role: 'partner1' | 'partner2') => void;
@@ -35,6 +42,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCouple(currentCouple);
     } catch (e) {
       console.warn('Error initializing session', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginCoupleDirect = async (params: {
+    partner1Name: string;
+    partner1Nickname?: string;
+    partner2Name: string;
+    partner2Nickname?: string;
+    daysTogether?: number;
+  }) => {
+    setIsLoading(true);
+    try {
+      const res = await api.loginCoupleDirect(params);
+      setUser(res.user);
+      setCouple(res.couple);
     } finally {
       setIsLoading(false);
     }
@@ -91,6 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!user,
         isLoading,
         login,
+        loginCoupleDirect,
         register,
         logout,
         switchUserRole,

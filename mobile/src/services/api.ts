@@ -81,6 +81,58 @@ class ApiClient {
     return this.currentCouple;
   }
 
+  async loginCoupleDirect(params: {
+    partner1Name: string;
+    partner1Nickname?: string;
+    partner2Name: string;
+    partner2Nickname?: string;
+    daysTogether?: number;
+  }) {
+    const p1Name = params.partner1Name?.trim() || 'Srinija';
+    const p1Nick = params.partner1Nickname?.trim() || p1Name;
+    const p2Name = params.partner2Name?.trim() || 'Partner';
+    const p2Nick = params.partner2Nickname?.trim() || p2Name;
+    const days = params.daysTogether || 428;
+
+    const user1: User = {
+      id: 1,
+      name: p1Name,
+      nickname: p1Nick,
+      currentMood: 'in_love',
+      heartsCount: 100,
+    };
+
+    const user2: User = {
+      id: 2,
+      name: p2Name,
+      nickname: p2Nick,
+      currentMood: 'in_love',
+      heartsCount: 100,
+    };
+
+    const couple: Couple = {
+      id: Date.now(),
+      coupleCode: 'CF-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+      partner1: user1,
+      partner2: user2,
+      status: 'ACTIVE',
+      relationshipStartDate: new Date(Date.now() - days * 86400000).toISOString(),
+      daysTogether: days,
+      streakCount: Math.min(days, 14),
+      totalHearts: 120,
+      moodPartner1: 'in_love',
+      moodPartner2: 'in_love',
+      createdAt: new Date().toISOString(),
+    };
+
+    this.currentUser = user1;
+    this.currentCouple = couple;
+    this.setToken('mock-jwt-direct-' + Date.now());
+    await Storage.setItem('current_user', this.currentUser);
+    await Storage.setItem('current_couple', this.currentCouple);
+    return { token: this.token, user: this.currentUser, couple: this.currentCouple };
+  }
+
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
