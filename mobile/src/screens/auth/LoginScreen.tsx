@@ -5,7 +5,7 @@ import { Typography } from '../../theme/typography';
 import { Spacing } from '../../theme/spacing';
 import { GradientButton } from '../../components/common/GradientButton';
 import { useAuth } from '../../context/AuthContext';
-import { ArrowLeft, User, Lock, Sparkles } from 'lucide-react-native';
+import { ArrowLeft, Phone, Lock, Sparkles, ShieldCheck } from 'lucide-react-native';
 import { triggerHaptic } from '../../utils/haptics';
 
 interface LoginScreenProps {
@@ -14,37 +14,23 @@ interface LoginScreenProps {
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const { login } = useAuth();
-  const [identifier, setIdentifier] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
-    if (!identifier.trim()) {
-      setError('Please enter your email or phone number');
+    if (!phone.trim() || !password.trim()) {
+      setError('Please enter your Mobile Number and Password');
       return;
     }
     setError(null);
     setLoading(true);
     triggerHaptic('medium');
     try {
-      await login(identifier.trim(), password.trim() || undefined);
+      await login(phone.trim(), password.trim());
     } catch (e: any) {
-      setError(e.message || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleQuickDemo = async (type: 'srinija' | 'partner') => {
-    triggerHaptic('heavy');
-    setLoading(true);
-    try {
-      if (type === 'srinija') {
-        await login('srinija@amora.love', 'Password123!');
-      } else {
-        await login('partner@amora.love', 'Password123!');
-      }
+      setError(e.message || 'Login failed. Check your mobile number and password.');
     } finally {
       setLoading(false);
     }
@@ -58,9 +44,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.title}>Welcome Back ❤️</Text>
-        <Text style={styles.subtitle}>Log in to enter your shared couple sanctuary.</Text>
+        <Text style={styles.subtitle}>Log in with your registered mobile number & password.</Text>
 
         {error && (
           <View style={styles.errorBox}>
@@ -69,22 +60,23 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         )}
 
         <View style={styles.form}>
-          <Text style={styles.label}>Email, Phone Number or Name</Text>
+          <Text style={styles.label}>Mobile Number *</Text>
           <View style={styles.inputContainer}>
-            <User size={18} color={Colors.textSecondary} />
+            <Phone size={18} color={Colors.primary} />
             <TextInput
               style={styles.input}
-              placeholder="e.g. srinija@gmail.com or 9876543210"
+              placeholder="e.g. 9876543210"
               placeholderTextColor={Colors.textMuted}
-              value={identifier}
-              onChangeText={setIdentifier}
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
               autoCapitalize="none"
             />
           </View>
 
-          <Text style={styles.label}>Password (optional)</Text>
+          <Text style={styles.label}>Password *</Text>
           <View style={styles.inputContainer}>
-            <Lock size={18} color={Colors.textSecondary} />
+            <Lock size={18} color={Colors.primary} />
             <TextInput
               style={styles.input}
               placeholder="••••••••"
@@ -103,26 +95,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           style={styles.loginBtn}
         />
 
-        {/* 1-Tap Quick Demo Logins for Pair Testing */}
-        <View style={styles.demoSection}>
-          <View style={styles.demoHeader}>
-            <Sparkles size={14} color={Colors.gold} />
-            <Text style={styles.demoHeaderText}>Quick 1-Tap Demo Switcher:</Text>
-          </View>
-          <View style={styles.demoRow}>
-            <TouchableOpacity style={styles.demoBtn} onPress={() => handleQuickDemo('srinija')}>
-              <Text style={styles.demoBtnText}>👩 Log In as Srinija</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.demoBtn, styles.demoBtnPartner]} onPress={() => handleQuickDemo('partner')}>
-              <Text style={styles.demoBtnText}>👨 Log In as Partner</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
         <View style={styles.footerRow}>
           <Text style={styles.footerText}>New to Couple-Friendly? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.footerLink}>Create Account</Text>
+            <Text style={styles.footerLink}>Register New Couple</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -138,13 +114,16 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.xl,
   },
   header: {
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.xs,
   },
   backBtn: {
     padding: Spacing.xs,
   },
   scroll: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 150,
   },
   title: {
     fontSize: Typography.sizes.xxl,
@@ -197,46 +176,6 @@ const styles = StyleSheet.create({
   loginBtn: {
     marginTop: Spacing.xl,
     marginBottom: Spacing.lg,
-  },
-  demoSection: {
-    backgroundColor: '#FFF9EB',
-    borderRadius: Spacing.borderRadius.lg,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: '#FFE5A3',
-    marginBottom: Spacing.lg,
-  },
-  demoHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: Spacing.sm,
-  },
-  demoHeaderText: {
-    fontSize: Typography.sizes.xs,
-    fontWeight: Typography.weights.bold,
-    color: '#B7791F',
-  },
-  demoRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  demoBtn: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 10,
-    borderRadius: Spacing.borderRadius.md,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.primaryLight,
-  },
-  demoBtnPartner: {
-    borderColor: '#4FACFE',
-  },
-  demoBtnText: {
-    fontSize: Typography.sizes.xs + 1,
-    fontWeight: Typography.weights.bold,
-    color: Colors.textPrimary,
   },
   footerRow: {
     flexDirection: 'row',

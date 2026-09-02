@@ -12,8 +12,10 @@ interface AuthContextType {
   loginCoupleDirect: (params: {
     partner1Name: string;
     partner1Nickname?: string;
+    partner1Phone?: string;
     partner2Name: string;
     partner2Nickname?: string;
+    partner2Phone?: string;
     daysTogether?: number;
   }) => Promise<void>;
   register: (data: any) => Promise<void>;
@@ -50,8 +52,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginCoupleDirect = async (params: {
     partner1Name: string;
     partner1Nickname?: string;
+    partner1Phone?: string;
     partner2Name: string;
     partner2Nickname?: string;
+    partner2Phone?: string;
     daysTogether?: number;
   }) => {
     setIsLoading(true);

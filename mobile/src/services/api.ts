@@ -13,29 +13,32 @@ import {
   Nudge
 } from '../types';
 import { 
-  mockUser1, 
-  mockUser2, 
-  mockCouple, 
-  mockDailyQuestion, 
   mockGames, 
-  mockMemories, 
-  mockLoveNotes, 
-  mockBucketList, 
-  mockDatePlans 
+  mockDailyQuestion 
 } from './mockData';
 
 const BASE_URL = 'http://localhost:8080/api';
+
+export interface UserRecord extends User {
+  password?: string;
+  phone?: string;
+}
 
 class ApiClient {
   private token: string | null = null;
   private currentUser: User | null = null;
   private currentCouple: Couple | null = null;
-  private memories: Memory[] = [...mockMemories];
-  private loveNotes: LoveNote[] = [...mockLoveNotes];
-  private bucketList: BucketListItem[] = [...mockBucketList];
-  private dailyQuestion: DailyQuestion = { ...mockDailyQuestion };
-  private datePlans: DatePlan[] = [...mockDatePlans];
-  private isDemoMode: boolean = false;
+  private memories: Memory[] = [];
+  private loveNotes: LoveNote[] = [];
+  private bucketList: BucketListItem[] = [];
+  private dailyQuestion: DailyQuestion = { 
+    ...mockDailyQuestion, 
+    partner1Answer: undefined, 
+    partner2Answer: undefined, 
+    bothAnswered: false, 
+    isAnsweredByMe: false 
+  };
+  private datePlans: DatePlan[] = [];
 
   async init() {
     const savedToken = await Storage.getItem<string>('auth_token');
@@ -62,14 +65,18 @@ class ApiClient {
     }
   }
 
-  // Switch demo user between Srinija and Partner to test dual-user interactions!
+  // Switch demo user between Partner 1 and Partner 2
   switchDemoUser(targetUser: 'partner1' | 'partner2') {
-    if (targetUser === 'partner1') {
-      this.currentUser = mockUser1;
-    } else {
-      this.currentUser = mockUser2;
+    if (this.currentCouple) {
+      if (targetUser === 'partner1' && this.currentCouple.partner1) {
+        this.currentUser = this.currentCouple.partner1;
+      } else if (targetUser === 'partner2' && this.currentCouple.partner2) {
+        this.currentUser = this.currentCouple.partner2;
+      }
     }
-    Storage.setItem('current_user', this.currentUser);
+    if (this.currentUser) {
+      Storage.setItem('current_user', this.currentUser);
+    }
     return this.currentUser;
   }
 
@@ -81,13 +88,34 @@ class ApiClient {
     return this.currentCouple;
   }
 
+  async login(identifier: string, password?: string) {
+    return this.request<{ token: string; user: User; couple: Couple }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ identifier, password }),
+    });
+  }
+
+  async register(data: {
+    name: string;
+    nickname?: string;
+    phone: string;
+    password: string;
+    email?: string;
+    coupleCode?: string;
+  }) {
+    return this.request<{ token: string; user: User; couple: Couple }>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   async loginCoupleDirect(params: {
     partner1Name: string;
     partner1Nickname?: string;
+    partner1Phone?: string;
     partner2Name: string;
     partner2Nickname?: string;
-    partner1Email?: string;
-    partner2Email?: string;
+    partner2Phone?: string;
     daysTogether?: number;
   }) {
     const p1Name = params.partner1Name?.trim() || 'Partner 1';
@@ -96,27 +124,30 @@ class ApiClient {
     const p2Nick = params.partner2Nickname?.trim() || p2Name;
     const days = params.daysTogether !== undefined ? Math.max(1, params.daysTogether) : 1;
 
-    const user1: User = {
+    const user1: UserRecord = {
       id: Date.now(),
       name: p1Name,
       nickname: p1Nick,
-      email: params.partner1Email || `${p1Name.toLowerCase().replace(/\s+/g, '')}@couplefriendly.app`,
+      phone: params.partner1Phone || '9876543210',
+      email: `${p1Name.toLowerCase().replace(/\s+/g, '')}@couplefriendly.app`,
       currentMood: 'in_love',
       heartsCount: 0,
     };
 
-    const user2: User = {
+    const user2: UserRecord = {
       id: Date.now() + 1,
       name: p2Name,
       nickname: p2Nick,
-      email: params.partner2Email || `${p2Name.toLowerCase().replace(/\s+/g, '')}@couplefriendly.app`,
+      phone: params.partner2Phone || '9876543211',
+      email: `${p2Name.toLowerCase().replace(/\s+/g, '')}@couplefriendly.app`,
       currentMood: 'in_love',
       heartsCount: 0,
     };
 
+    const code = 'CF-' + Math.random().toString(36).substring(2, 6).toUpperCase();
     const couple: Couple = {
       id: Date.now(),
-      coupleCode: 'CF-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+      coupleCode: code,
       partner1: user1,
       partner2: user2,
       status: 'ACTIVE',
@@ -133,12 +164,13 @@ class ApiClient {
     this.currentCouple = couple;
     this.memories = [];
     this.loveNotes = [];
+    this.bucketList = [];
     this.setToken('mock-jwt-direct-' + Date.now());
 
     // Save to multi-user database
-    const usersDb = (await Storage.getItem<Record<string, User>>('users_db')) || {};
-    usersDb[user1.email!] = user1;
-    usersDb[user2.email!] = user2;
+    const usersDb = (await Storage.getItem<Record<string, UserRecord>>('users_db')) || {};
+    usersDb[user1.phone!] = user1;
+    usersDb[user2.phone!] = user2;
     await Storage.setItem('users_db', usersDb);
 
     const couplesDb = (await Storage.getItem<Record<string, Couple>>('couples_db')) || {};
@@ -149,6 +181,7 @@ class ApiClient {
     await Storage.setItem('current_couple', this.currentCouple);
     await Storage.setItem('saved_memories', []);
     await Storage.setItem('saved_notes', []);
+    await Storage.setItem('saved_bucket', []);
     return { token: this.token, user: this.currentUser, couple: this.currentCouple };
   }
 
@@ -174,8 +207,7 @@ class ApiClient {
 
       return await response.json();
     } catch (err) {
-      // Offline / Demo fallback
-      console.log(`Backend unreachable for ${endpoint}, using local state.`);
+      // Client-side offline / mobile local DB fallback
       return this.handleFallback<T>(endpoint, options);
     }
   }
@@ -186,77 +218,105 @@ class ApiClient {
 
     if (endpoint === '/auth/register') {
       const rawName = body.name?.trim() || 'User';
-      const rawEmail = (body.email?.trim() || `${rawName.toLowerCase()}@couplefriendly.app`).toLowerCase();
-      const newUser: User = {
+      const rawPhone = (body.phone?.trim() || body.mobile?.trim() || '').replace(/\s+/g, '');
+      const rawPassword = body.password?.trim() || '';
+      const rawNickname = body.nickname?.trim() || rawName;
+
+      const newUser: UserRecord = {
         id: Date.now(),
         name: rawName,
-        nickname: body.nickname?.trim() || rawName,
-        email: rawEmail,
-        phone: body.phone?.trim(),
+        nickname: rawNickname,
+        phone: rawPhone,
+        password: rawPassword,
+        email: body.email?.trim() || `${rawName.toLowerCase()}@couplefriendly.app`,
         currentMood: 'in_love',
         heartsCount: 0,
       };
+
+      const usersDb = (await Storage.getItem<Record<string, UserRecord>>('users_db')) || {};
+      usersDb[rawPhone] = newUser;
+      if (newUser.email) usersDb[newUser.email.toLowerCase()] = newUser;
+      await Storage.setItem('users_db', usersDb);
+
       this.currentUser = newUser;
       this.memories = [];
       this.loveNotes = [];
-
-      const usersDb = (await Storage.getItem<Record<string, User>>('users_db')) || {};
-      usersDb[rawEmail] = newUser;
-      await Storage.setItem('users_db', usersDb);
-
-      const code = 'CF-' + Math.random().toString(36).substring(2, 6).toUpperCase();
-      this.currentCouple = {
-        id: Date.now(),
-        coupleCode: code,
-        partner1: newUser,
-        partner2: undefined,
-        status: 'PENDING',
-        relationshipStartDate: new Date().toISOString(),
-        daysTogether: 1,
-        streakCount: 1,
-        totalHearts: 0,
-        moodPartner1: 'in_love',
-        moodPartner2: undefined,
-        createdAt: new Date().toISOString(),
-      };
+      this.bucketList = [];
 
       const couplesDb = (await Storage.getItem<Record<string, Couple>>('couples_db')) || {};
-      couplesDb[code] = this.currentCouple;
-      await Storage.setItem('couples_db', couplesDb);
 
+      // If user provided a partner's couple code during registration
+      const targetCode = (body.coupleCode || '').trim().toUpperCase();
+      if (targetCode && couplesDb[targetCode]) {
+        const existingCouple = couplesDb[targetCode];
+        this.currentCouple = {
+          ...existingCouple,
+          partner2: newUser,
+          status: 'ACTIVE',
+        };
+        couplesDb[targetCode] = this.currentCouple;
+      } else {
+        const newCode = 'CF-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        this.currentCouple = {
+          id: Date.now(),
+          coupleCode: newCode,
+          partner1: newUser,
+          partner2: undefined,
+          status: 'PENDING',
+          relationshipStartDate: new Date().toISOString(),
+          daysTogether: 1,
+          streakCount: 1,
+          totalHearts: 0,
+          moodPartner1: 'in_love',
+          moodPartner2: undefined,
+          createdAt: new Date().toISOString(),
+        };
+        couplesDb[newCode] = this.currentCouple;
+      }
+
+      await Storage.setItem('couples_db', couplesDb);
       this.setToken('mock-jwt-token-' + Date.now());
       await Storage.setItem('current_user', this.currentUser);
       await Storage.setItem('current_couple', this.currentCouple);
       await Storage.setItem('saved_memories', []);
       await Storage.setItem('saved_notes', []);
+      await Storage.setItem('saved_bucket', []);
       return { token: this.token, user: this.currentUser, couple: this.currentCouple } as unknown as T;
     }
 
     if (endpoint === '/auth/login') {
-      const id = (body.identifier || body.email || body.name || 'User').trim().toLowerCase();
-      const usersDb = (await Storage.getItem<Record<string, User>>('users_db')) || {};
+      const id = (body.identifier || body.phone || body.email || body.name || '').trim().toLowerCase().replace(/\s+/g, '');
+      const inputPass = (body.password || '').trim();
+
+      const usersDb = (await Storage.getItem<Record<string, UserRecord>>('users_db')) || {};
       const couplesDb = (await Storage.getItem<Record<string, Couple>>('couples_db')) || {};
 
-      let loggedInUser: User | undefined = usersDb[id];
+      let loggedInUser: UserRecord | undefined = usersDb[id];
       if (!loggedInUser) {
-        // Search by name
+        // Search by phone, email, or name
         loggedInUser = Object.values(usersDb).find(
-          u => u.name.toLowerCase() === id || u.nickname?.toLowerCase() === id
+          u => (u.phone && u.phone.replace(/\s+/g, '') === id) || 
+               (u.email && u.email.toLowerCase() === id) || 
+               u.name.toLowerCase() === id || 
+               u.nickname?.toLowerCase() === id
         );
       }
 
       if (!loggedInUser) {
-        const displayName = id.includes('@') ? id.split('@')[0] : id;
-        const formattedName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
+        // Create new profile with clean 0 stats if not found
+        const isPhone = /^\+?[0-9]{7,15}$/.test(id);
+        const displayName = isPhone ? `User-${id.slice(-4)}` : id.charAt(0).toUpperCase() + id.slice(1);
         loggedInUser = {
           id: Date.now(),
-          name: formattedName,
-          nickname: formattedName,
-          email: id.includes('@') ? id : `${displayName}@couplefriendly.app`,
+          name: displayName,
+          nickname: displayName,
+          phone: isPhone ? id : undefined,
+          password: inputPass || 'Password123',
+          email: !isPhone && id.includes('@') ? id : `${displayName.toLowerCase()}@couplefriendly.app`,
           currentMood: 'in_love',
           heartsCount: 0,
         };
-        usersDb[loggedInUser.email!] = loggedInUser;
+        usersDb[id] = loggedInUser;
         await Storage.setItem('users_db', usersDb);
       }
 
@@ -264,25 +324,31 @@ class ApiClient {
 
       // Find couple belonging to this user
       let matchedCouple = Object.values(couplesDb).find(
-        c => c.partner1?.id === loggedInUser!.id || c.partner2?.id === loggedInUser!.id || c.partner1?.email === loggedInUser!.email || c.partner2?.email === loggedInUser!.email
+        c => c.partner1?.id === loggedInUser!.id || 
+             c.partner2?.id === loggedInUser!.id || 
+             (c.partner1 as UserRecord)?.phone === loggedInUser!.phone || 
+             (c.partner2 as UserRecord)?.phone === loggedInUser!.phone ||
+             c.partner1?.email === loggedInUser!.email || 
+             c.partner2?.email === loggedInUser!.email
       );
 
       if (!matchedCouple) {
+        const code = 'CF-' + Math.random().toString(36).substring(2, 6).toUpperCase();
         matchedCouple = {
           id: Date.now(),
-          coupleCode: 'CF-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+          coupleCode: code,
           partner1: loggedInUser,
           partner2: undefined,
-          status: 'ACTIVE',
+          status: 'PENDING',
           relationshipStartDate: new Date().toISOString(),
           daysTogether: 1,
           streakCount: 1,
           totalHearts: 0,
           moodPartner1: 'in_love',
-          moodPartner2: 'in_love',
+          moodPartner2: undefined,
           createdAt: new Date().toISOString(),
         };
-        couplesDb[matchedCouple.coupleCode] = matchedCouple;
+        couplesDb[code] = matchedCouple;
         await Storage.setItem('couples_db', couplesDb);
       }
 
@@ -311,7 +377,7 @@ class ApiClient {
           id: Date.now(),
           name: body.partnerName || 'Partner',
           nickname: body.partnerNickname || 'My Love',
-          email: body.email || 'partner@couplefriendly.app',
+          phone: body.phone || '9876543210',
           currentMood: 'happy',
           heartsCount: 0,
         };
@@ -344,24 +410,31 @@ class ApiClient {
     }
 
     if (endpoint === '/couples/mood') {
-      if (this.currentUser.id === 1) {
-        this.currentCouple.moodPartner1 = body.mood;
-      } else {
-        this.currentCouple.moodPartner2 = body.mood;
+      if (this.currentCouple) {
+        const isP1 = this.currentUser?.id === this.currentCouple.partner1?.id;
+        if (isP1) {
+          this.currentCouple.moodPartner1 = body.mood;
+        } else {
+          this.currentCouple.moodPartner2 = body.mood;
+        }
+        await Storage.setItem('current_couple', this.currentCouple);
       }
-      this.currentUser.currentMood = body.mood;
-      await Storage.setItem('current_user', this.currentUser);
-      await Storage.setItem('current_couple', this.currentCouple);
+      if (this.currentUser) {
+        this.currentUser.currentMood = body.mood;
+        await Storage.setItem('current_user', this.currentUser);
+      }
       return this.currentCouple as unknown as T;
     }
 
     if (endpoint === '/couples/nudge') {
-      this.currentCouple.totalHearts += 5;
-      await Storage.setItem('current_couple', this.currentCouple);
+      if (this.currentCouple) {
+        this.currentCouple.totalHearts += 5;
+        await Storage.setItem('current_couple', this.currentCouple);
+      }
       const nudge: Nudge = {
         id: Date.now(),
-        sender: this.currentUser,
-        receiver: this.currentUser.id === 1 ? mockUser2 : mockUser1,
+        sender: this.currentUser!,
+        receiver: (this.currentUser?.id === this.currentCouple?.partner1?.id ? this.currentCouple?.partner2 : this.currentCouple?.partner1) || this.currentUser!,
         nudgeType: body.nudgeType || 'HUG',
         message: body.message,
         isRead: false,
@@ -379,200 +452,159 @@ class ApiClient {
     }
 
     if (endpoint === '/games/daily-question/answer') {
-      if (this.currentUser.id === 1) {
+      const isP1 = this.currentUser?.id === this.currentCouple?.partner1?.id;
+      if (isP1) {
         this.dailyQuestion.partner1Answer = body.answerText;
       } else {
         this.dailyQuestion.partner2Answer = body.answerText;
       }
       this.dailyQuestion.bothAnswered = !!(this.dailyQuestion.partner1Answer && this.dailyQuestion.partner2Answer);
       this.dailyQuestion.isAnsweredByMe = true;
-      this.currentCouple.totalHearts += 20;
-      await Storage.setItem('current_couple', this.currentCouple);
+      if (this.currentCouple) {
+        this.currentCouple.totalHearts += 20;
+        await Storage.setItem('current_couple', this.currentCouple);
+      }
       return this.dailyQuestion as unknown as T;
     }
 
-    if (endpoint.startsWith('/games/session/')) {
-      const gameId = parseInt(endpoint.split('/').pop() || '1');
-      const game = mockGames.find(g => g.id === gameId) || mockGames[0];
-      const session: GameSession = {
-        id: 101,
-        coupleId: this.currentCouple.id,
-        game,
-        status: 'IN_PROGRESS',
-        partner1Score: 4,
-        partner2Score: 4,
-        totalQuestions: 6,
-        answeredQuestions: 2,
-        startedAt: new Date().toISOString(),
-        questions: [
-          {
-            id: 1,
-            gameId: game.id,
-            prompt: 'Live in a cozy mountain cabin with a fireplace OR a breezy beachfront villa?',
-            optionA: 'Mountain Cabin 🏔️',
-            optionB: 'Beachfront Villa 🏖️',
-            myAnswer: 'Beachfront Villa 🏖️',
-            partnerAnswer: 'Beachfront Villa 🏖️',
-            bothAnswered: true,
-            isMatch: true,
-          },
-          {
-            id: 2,
-            gameId: game.id,
-            prompt: 'Have breakfast in bed made by your partner OR cook an extravagant dinner together with wine?',
-            optionA: 'Breakfast in Bed ☕',
-            optionB: 'Cook Dinner Together 🍷',
-            myAnswer: 'Cook Dinner Together 🍷',
-            partnerAnswer: 'Cook Dinner Together 🍷',
-            bothAnswered: true,
-            isMatch: true,
-          },
-          {
-            id: 3,
-            gameId: game.id,
-            prompt: 'Take a spontaneous 2-week backpacking road trip OR relax at a 5-star luxury all-inclusive resort?',
-            optionA: 'Road Trip Adventure 🚗',
-            optionB: 'Luxury Resort 🌴',
-            myAnswer: null,
-            partnerAnswer: 'LOCKED',
-            bothAnswered: false,
-            isMatch: false,
-          },
-          {
-            id: 4,
-            gameId: game.id,
-            prompt: 'Spend a rainy evening watching movies under a blanket fort OR slow dancing to acoustic songs in the kitchen?',
-            optionA: 'Movie Blanket Fort 🍿',
-            optionB: 'Slow Dance in Kitchen 🎶',
-            myAnswer: null,
-            partnerAnswer: null,
-            bothAnswered: false,
-            isMatch: false,
-          }
-        ]
-      };
-      return session as unknown as T;
-    }
-
     if (endpoint === '/memories') {
-      if (method === 'POST') {
-        const newMemory: Memory = {
-          id: Date.now(),
-          title: body.title || 'New Memory',
-          description: body.description,
-          memoryDate: body.memoryDate || new Date().toISOString().split('T')[0],
-          locationName: body.locationName,
-          mediaUrls: body.mediaUrls || 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=800&auto=format&fit=crop',
-          moodTag: body.moodTag || 'Romantic',
-          isFavorite: body.isFavorite || false,
-          createdAt: new Date().toISOString(),
-        };
-        this.memories.unshift(newMemory);
-        this.currentCouple.totalHearts += 15;
-        await Storage.setItem('saved_memories', this.memories);
-        await Storage.setItem('current_couple', this.currentCouple);
-        return newMemory as unknown as T;
-      }
       return this.memories as unknown as T;
     }
 
-    if (endpoint === '/love-notes') {
-      if (method === 'POST') {
-        const newNote: LoveNote = {
-          id: Date.now(),
-          sender: this.currentUser,
-          receiver: this.currentUser.id === 1 ? mockUser2 : mockUser1,
-          category: body.category || 'LOVE_NOTE',
-          title: body.title,
-          message: body.message,
-          unlockCondition: body.unlockCondition,
-          scheduledAt: body.scheduledAt,
-          paperTheme: body.paperTheme || 'rose',
-          isOpened: false,
-          createdAt: new Date().toISOString(),
-        };
-        this.loveNotes.unshift(newNote);
-        this.currentCouple.totalHearts += 10;
-        await Storage.setItem('saved_notes', this.loveNotes);
+    if (endpoint === '/memories/create') {
+      const newMem: Memory = {
+        id: Date.now(),
+        coupleId: this.currentCouple?.id || 1,
+        title: body.title || 'Special Memory',
+        description: body.description || '',
+        memoryDate: body.memoryDate || new Date().toISOString(),
+        imageUrl: body.imageUrl || 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=800&auto=format&fit=crop',
+        tags: body.tags || 'DATE_NIGHT',
+        createdById: this.currentUser?.id || 1,
+        createdAt: new Date().toISOString(),
+      };
+      this.memories.unshift(newMem);
+      await Storage.setItem('saved_memories', this.memories);
+      if (this.currentCouple) {
+        this.currentCouple.totalHearts += 15;
         await Storage.setItem('current_couple', this.currentCouple);
-        return newNote as unknown as T;
       }
+      return newMem as unknown as T;
+    }
+
+    if (endpoint === '/love-notes') {
       return this.loveNotes as unknown as T;
     }
 
-    if (endpoint === '/memories/bucket-list') {
-      if (method === 'POST') {
-        const newItem: BucketListItem = {
-          id: Date.now(),
-          title: body.title,
-          category: body.category || 'TRAVEL',
-          isCompleted: false,
-          notes: body.notes,
-        };
-        this.bucketList.unshift(newItem);
-        await Storage.setItem('saved_bucket', this.bucketList);
-        return newItem as unknown as T;
+    if (endpoint === '/love-notes/create') {
+      const newNote: LoveNote = {
+        id: Date.now(),
+        sender: this.currentUser!,
+        content: body.content || '',
+        fontStyle: body.fontStyle || 'HANDWRITTEN',
+        bgTheme: body.bgTheme || 'ROSE_GOLD',
+        isSealed: body.isSealed ?? false,
+        openDate: body.openDate,
+        createdAt: new Date().toISOString(),
+      };
+      this.loveNotes.unshift(newNote);
+      await Storage.setItem('saved_notes', this.loveNotes);
+      if (this.currentCouple) {
+        this.currentCouple.totalHearts += 10;
+        await Storage.setItem('current_couple', this.currentCouple);
       }
+      return newNote as unknown as T;
+    }
+
+    if (endpoint === '/bucket-list') {
       return this.bucketList as unknown as T;
     }
 
-    if (endpoint.startsWith('/memories/bucket-list/') && endpoint.endsWith('/toggle')) {
-      const id = parseInt(endpoint.split('/')[3]);
-      const item = this.bucketList.find(b => b.id === id);
-      if (item) {
-        item.isCompleted = !item.isCompleted;
-        if (item.isCompleted) {
-          item.completedAt = new Date().toISOString().split('T')[0];
-          this.currentCouple.totalHearts += 25;
-          await Storage.setItem('current_couple', this.currentCouple);
-        }
-        await Storage.setItem('saved_bucket', this.bucketList);
-      }
-      return item as unknown as T;
-    }
-
-    if (endpoint === '/cupid-ai/generate') {
-      const res: CupidAIResponse = {
-        title: body.mode === 'LOVE_LETTER' ? '💌 Handcrafted Love Letter' : '✨ Twilight Sunset & Candlelight Coffee',
-        content: body.mode === 'LOVE_LETTER' 
-          ? `Hey my love ❤️,\n\nI was just thinking about us and how lucky I am to have you in my life. ${body.prompt || 'Thank you for all the sweet moments and making everyday special.'}\n\nForever yours 🥰`
-          : '1. ☕ 04:30 PM: Meet at a cozy rooftop cafe for hazelnut coffee & strawberry cheesecake.\n2. 🌅 05:45 PM: Golden hour sunset walk holding hands at the lakeside park.\n3. 📸 06:30 PM: Take 3 silly selfies together.\n4. 🍕 07:30 PM: Shared gourmet pizza dinner with acoustic jazz music.',
-        suggestions: ['Bring a light jacket for the sunset walk', 'Play your favorite couple song in the car'],
-        estimatedCost: '₹1,200',
-        tone: body.tone || 'Romantic'
+    if (endpoint === '/bucket-list/create') {
+      const newItem: BucketListItem = {
+        id: Date.now(),
+        title: body.title || 'Dream Date',
+        description: body.description,
+        isCompleted: false,
+        suggestedBy: this.currentUser!,
+        category: body.category || 'ADVENTURE',
       };
-      return res as unknown as T;
+      this.bucketList.push(newItem);
+      await Storage.setItem('saved_bucket', this.bucketList);
+      return newItem as unknown as T;
     }
 
-    return {} as T;
+    return {} as unknown as T;
   }
 
-  // API Call Wrappers
-  login = (identifier: string, password?: string) => this.request<any>('/auth/login', { method: 'POST', body: JSON.stringify({ identifier, password: password || 'Password123!' }) });
-  register = (data: any) => this.request<any>('/auth/register', { method: 'POST', body: JSON.stringify(data) });
-  getCoupleStatus = () => this.request<Couple>('/couples/status');
-  getInviteCode = () => this.request<Couple>('/couples/invite-code');
-  pairWithCode = (coupleCode: string, relationshipStartDate?: string) => this.request<Couple>('/couples/pair', { method: 'POST', body: JSON.stringify({ coupleCode, relationshipStartDate }) });
-  updateMood = (mood: string) => this.request<Couple>('/couples/mood', { method: 'PUT', body: JSON.stringify({ mood }) });
-  sendNudge = (nudgeType: string, message?: string) => this.request<Nudge>('/couples/nudge', { method: 'POST', body: JSON.stringify({ nudgeType, message }) });
-  
-  getGames = () => this.request<Game[]>('/games');
-  getDailyQuestion = () => this.request<DailyQuestion>('/games/daily-question');
-  answerDailyQuestion = (answerText: string) => this.request<DailyQuestion>('/games/daily-question/answer', { method: 'POST', body: JSON.stringify({ answerText }) });
-  startGameSession = (gameId: number) => this.request<GameSession>(`/games/session/${gameId}`, { method: 'POST' });
-  submitGameAnswer = (sessionId: number, questionId: number, answerText: string) => this.request<GameSession>('/games/answer', { method: 'POST', body: JSON.stringify({ sessionId, questionId, answerText }) });
-  
-  getMemories = () => this.request<Memory[]>('/memories');
-  createMemory = (data: any) => this.request<Memory>('/memories', { method: 'POST', body: JSON.stringify(data) });
-  getLoveNotes = () => this.request<LoveNote[]>('/love-notes');
-  createLoveNote = (data: any) => this.request<LoveNote>('/love-notes', { method: 'POST', body: JSON.stringify(data) });
-  openLoveNote = (id: number) => this.request<LoveNote>(`/love-notes/${id}/open`, { method: 'PUT' });
-  
-  getBucketList = () => this.request<BucketListItem[]>('/memories/bucket-list');
-  addBucketItem = (data: any) => this.request<BucketListItem>('/memories/bucket-list', { method: 'POST', body: JSON.stringify(data) });
-  toggleBucketItem = (id: number) => this.request<BucketListItem>(`/memories/bucket-list/${id}/toggle`, { method: 'PUT' });
+  async getCoupleStatus(): Promise<Couple> {
+    return this.request<Couple>('/couples/status');
+  }
 
-  generateCupidAI = (data: any) => this.request<CupidAIResponse>('/cupid-ai/generate', { method: 'POST', body: JSON.stringify(data) });
+  async pairWithCode(code: string, startDate?: string): Promise<Couple> {
+    return this.request<Couple>('/couples/pair', {
+      method: 'POST',
+      body: JSON.stringify({ coupleCode: code, startDate }),
+    });
+  }
+
+  async updateMood(mood: string): Promise<Couple> {
+    return this.request<Couple>('/couples/mood', {
+      method: 'POST',
+      body: JSON.stringify({ mood }),
+    });
+  }
+
+  async sendNudge(nudgeType: string, message?: string): Promise<Nudge> {
+    return this.request<Nudge>('/couples/nudge', {
+      method: 'POST',
+      body: JSON.stringify({ nudgeType, message }),
+    });
+  }
+
+  async getDailyQuestion(): Promise<DailyQuestion> {
+    return this.request<DailyQuestion>('/games/daily-question');
+  }
+
+  async answerDailyQuestion(answerText: string): Promise<DailyQuestion> {
+    return this.request<DailyQuestion>('/games/daily-question/answer', {
+      method: 'POST',
+      body: JSON.stringify({ answerText }),
+    });
+  }
+
+  async getMemories(): Promise<Memory[]> {
+    return this.request<Memory[]>('/memories');
+  }
+
+  async createMemory(data: Partial<Memory>): Promise<Memory> {
+    return this.request<Memory>('/memories/create', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getLoveNotes(): Promise<LoveNote[]> {
+    return this.request<LoveNote[]>('/love-notes');
+  }
+
+  async createLoveNote(data: Partial<LoveNote>): Promise<LoveNote> {
+    return this.request<LoveNote>('/love-notes/create', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getBucketList(): Promise<BucketListItem[]> {
+    return this.request<BucketListItem[]>('/bucket-list');
+  }
+
+  async createBucketListItem(data: Partial<BucketListItem>): Promise<BucketListItem> {
+    return this.request<BucketListItem>('/bucket-list/create', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const api = new ApiClient();

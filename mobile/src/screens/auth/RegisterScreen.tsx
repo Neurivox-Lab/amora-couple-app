@@ -5,7 +5,7 @@ import { Typography } from '../../theme/typography';
 import { Spacing } from '../../theme/spacing';
 import { GradientButton } from '../../components/common/GradientButton';
 import { useAuth } from '../../context/AuthContext';
-import { ArrowLeft, User, Phone, Mail, Lock, Heart } from 'lucide-react-native';
+import { ArrowLeft, User, Phone, Lock, Heart, Sparkles } from 'lucide-react-native';
 import { triggerHaptic } from '../../utils/haptics';
 
 interface RegisterScreenProps {
@@ -17,26 +17,26 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
   const [name, setName] = useState('');
   const [nickname, setNickname] = useState('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [coupleCode, setCoupleCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleRegister = async () => {
-    if (!name.trim()) {
-      setError('Please enter your name');
+    if (!name.trim() || !phone.trim() || !password.trim()) {
+      setError('Please fill in Name, Mobile Number, and Password');
       return;
     }
     setError(null);
     setLoading(true);
-    triggerHaptic('medium');
+    triggerHaptic('heartbeat');
     try {
       await register({
         name: name.trim(),
-        nickname: nickname.trim() || undefined,
-        phone: phone.trim() || undefined,
-        email: email.trim() || undefined,
-        password: password.trim() || undefined,
+        nickname: nickname.trim() || name.trim(),
+        phone: phone.trim(),
+        password: password.trim(),
+        coupleCode: coupleCode.trim() || undefined,
       });
       navigation.navigate('Pairing');
     } catch (e: any) {
@@ -52,13 +52,18 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <ArrowLeft size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.stepText}>Step 1 of 2</Text>
+        <Text style={styles.stepText}>Step 1 of 2: Create Account</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
-        <Text style={styles.title}>Create Your Account ❤️</Text>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.title}>Register Your Account ❤️</Text>
         <Text style={styles.subtitle}>
-          Create your private profile to pair with your special someone.
+          Sign up with your mobile number to create your couple space and pair with your partner.
         </Text>
 
         {error && (
@@ -70,7 +75,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
         <View style={styles.form}>
           <Text style={styles.label}>Your Full Name *</Text>
           <View style={styles.inputContainer}>
-            <User size={18} color={Colors.textSecondary} />
+            <User size={18} color={Colors.primary} />
             <TextInput
               style={styles.input}
               placeholder="e.g. Srinija"
@@ -80,24 +85,24 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
             />
           </View>
 
-          <Text style={styles.label}>Partner's Cute Nickname for You (optional)</Text>
+          <Text style={styles.label}>Your Cute Nickname</Text>
           <View style={styles.inputContainer}>
-            <Heart size={18} color={Colors.primary} />
+            <Heart size={18} color={Colors.loveRed} />
             <TextInput
               style={styles.input}
-              placeholder="e.g. Babe, Sweetheart, Sri..."
+              placeholder="e.g. Sri 💖, My Queen, Babe..."
               placeholderTextColor={Colors.textMuted}
               value={nickname}
               onChangeText={setNickname}
             />
           </View>
 
-          <Text style={styles.label}>Phone Number (optional)</Text>
+          <Text style={styles.label}>Mobile Number (for Login) *</Text>
           <View style={styles.inputContainer}>
-            <Phone size={18} color={Colors.textSecondary} />
+            <Phone size={18} color={Colors.primary} />
             <TextInput
               style={styles.input}
-              placeholder="+91 98765 43210"
+              placeholder="e.g. 9876543210"
               placeholderTextColor={Colors.textMuted}
               value={phone}
               onChangeText={setPhone}
@@ -105,23 +110,9 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
             />
           </View>
 
-          <Text style={styles.label}>Email Address (optional)</Text>
+          <Text style={styles.label}>Create Password *</Text>
           <View style={styles.inputContainer}>
-            <Mail size={18} color={Colors.textSecondary} />
-            <TextInput
-              style={styles.input}
-              placeholder="you@couplefriendly.love"
-              placeholderTextColor={Colors.textMuted}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-
-          <Text style={styles.label}>Password (optional)</Text>
-          <View style={styles.inputContainer}>
-            <Lock size={18} color={Colors.textSecondary} />
+            <Lock size={18} color={Colors.primary} />
             <TextInput
               style={styles.input}
               placeholder="••••••••"
@@ -129,6 +120,19 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+            />
+          </View>
+
+          <Text style={styles.label}>Partner's Couple Code (optional if joining)</Text>
+          <View style={styles.inputContainer}>
+            <Sparkles size={18} color={Colors.gold} />
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. CF-8X7K (leave blank to get a new code)"
+              placeholderTextColor={Colors.textMuted}
+              value={coupleCode}
+              onChangeText={setCoupleCode}
+              autoCapitalize="characters"
             />
           </View>
         </View>
@@ -141,7 +145,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
         />
 
         <View style={styles.footerRow}>
-          <Text style={styles.footerText}>Already paired? </Text>
+          <Text style={styles.footerText}>Already registered? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
             <Text style={styles.footerLink}>Log In</Text>
           </TouchableOpacity>
@@ -162,18 +166,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.xs,
   },
   backBtn: {
     padding: Spacing.xs,
   },
   stepText: {
-    fontSize: Typography.sizes.xs + 1,
+    fontSize: Typography.sizes.xs,
     color: Colors.textSecondary,
     fontWeight: Typography.weights.semibold,
   },
   scroll: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 150,
   },
   title: {
     fontSize: Typography.sizes.xxl,
