@@ -77,17 +77,17 @@ export const UsScreen: React.FC = () => {
 
           <View style={styles.metricsRow}>
             <View style={styles.metricItem}>
-              <Text style={styles.metricVal}>{couple?.daysTogether || 428}</Text>
+              <Text style={styles.metricVal}>{couple?.daysTogether || 1}</Text>
               <Text style={styles.metricLabel}>Days Together</Text>
             </View>
             <View style={styles.metricDivider} />
             <View style={styles.metricItem}>
-              <Text style={styles.metricVal}>{couple?.streakCount || 14} 🔥</Text>
+              <Text style={styles.metricVal}>{couple?.streakCount || 1} 🔥</Text>
               <Text style={styles.metricLabel}>Day Streak</Text>
             </View>
             <View style={styles.metricDivider} />
             <View style={styles.metricItem}>
-              <Text style={styles.metricVal}>{couple?.totalHearts || 480} ❤️</Text>
+              <Text style={styles.metricVal}>{couple?.totalHearts || 0} ❤️</Text>
               <Text style={styles.metricLabel}>Love Hearts</Text>
             </View>
           </View>

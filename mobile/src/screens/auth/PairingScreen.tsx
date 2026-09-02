@@ -63,10 +63,17 @@ export const PairingScreen: React.FC<PairingScreenProps> = ({ navigation }) => {
     }
   };
 
-  const handleEnterSanctuary = () => {
+  const handleEnterSanctuary = async () => {
     triggerHaptic('heavy');
     setShowCelebration(false);
-    refreshCouple();
+    await refreshCouple();
+    if (navigation?.navigate) {
+      try {
+        navigation.navigate('MainTabs');
+      } catch (e) {
+        // Auth state automatically displays BottomTabNavigator
+      }
+    }
   };
 
   return (

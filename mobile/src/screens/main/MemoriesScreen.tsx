@@ -164,19 +164,15 @@ export const MemoriesScreen: React.FC = () => {
 
             <View style={styles.timelineLadder}>
               {[
-                { title: 'First Text & Chat 💬', date: 'Dec 18, 2022', desc: 'The conversation that started it all.' },
-                { title: 'First Coffee Date ☕', date: 'Jan 02, 2023', desc: 'You smiled and my heart raced.' },
-                { title: 'Relationship Started Officially ❤️', date: 'Jan 12, 2023', desc: 'Promised each other forever.' },
-                { title: 'First Beach Trip to Goa 🌴', date: 'Mar 14, 2023', desc: 'Sunsets, scooters, and beach walks.' },
-                { title: '1 Year Anniversary Celebration 💍', date: 'Jan 12, 2024', desc: '365 days of unconditional love.' },
-                { title: 'Today & Beyond ✨', date: '428 Days Together', desc: 'Writing new chapters every single day.' },
+                { title: 'Account Created & Paired ❤️', date: 'Day 1', desc: 'Our private couple sanctuary officially began.' },
+                { title: 'Growing Together 🌱', date: `Day ${couple?.daysTogether || 1}`, desc: 'Writing new chapters and memories every single day.' },
               ].map((item, idx) => (
                 <View key={idx} style={styles.timelineNode}>
                   <View style={styles.timelineLeft}>
                     <View style={styles.nodeCircle}>
                       <Text style={styles.nodeEmoji}>❤️</Text>
                     </View>
-                    {idx < 5 && <View style={styles.nodeConnector} />}
+                    {idx < 1 && <View style={styles.nodeConnector} />}
                   </View>
                   <RomanticCard style={styles.timelineCard}>
                     <Text style={styles.nodeTitle}>{item.title}</Text>

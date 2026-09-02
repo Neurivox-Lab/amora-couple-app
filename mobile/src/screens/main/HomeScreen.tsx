@@ -36,49 +36,7 @@ import { triggerHaptic } from '../../utils/haptics';
 
 const { width } = Dimensions.get('window');
 
-const INITIAL_STORIES: CoupleStory[] = [
-  {
-    id: 's1',
-    authorId: 2,
-    authorName: 'Partner',
-    type: 'NOTE',
-    content: 'Woke up thinking about how lucky I am to have you in my life 🧸💖',
-    bgGradient: ['#FF6B8B', '#FF8E53'],
-    createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 86400000).toISOString(),
-    reactions: [{ userId: 1, emoji: '❤️' }],
-    repliesCount: 2,
-    isViewed: false,
-  },
-  {
-    id: 's2',
-    authorId: 1,
-    authorName: 'Srinija',
-    type: 'VOICE',
-    content: 'Voice Note (0:15)',
-    audioDurationSec: 15,
-    bgGradient: ['#667EEA', '#764BA2'],
-    createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 86400000).toISOString(),
-    reactions: [],
-    repliesCount: 0,
-    isViewed: true,
-  },
-  {
-    id: 's3',
-    authorId: 2,
-    authorName: 'Partner',
-    type: 'VIDEO_PHOTO',
-    content: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=800&auto=format&fit=crop',
-    caption: 'Can’t wait for our weekend beach date! 🌊✨',
-    bgGradient: ['#11998E', '#38EF7D'],
-    createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 86400000).toISOString(),
-    reactions: [{ userId: 1, emoji: '🔥' }],
-    repliesCount: 1,
-    isViewed: false,
-  },
-];
+const INITIAL_STORIES: CoupleStory[] = [];
 
 const MOODS = [
   { id: 'in_love', label: 'In Love', emoji: '🥰' },
@@ -100,7 +58,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [showNudgeModal, setShowNudgeModal] = useState(false);
 
   // Stories & Chat State
-  const [stories, setStories] = useState<CoupleStory[]>(INITIAL_STORIES);
+  const [stories, setStories] = useState<CoupleStory[]>([]);
   const [showCreateStory, setShowCreateStory] = useState(false);
   const [activeStoryToView, setActiveStoryToView] = useState<CoupleStory | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
@@ -225,7 +183,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 size={54}
                 onPress={triggerHeartCelebration}
               />
-              <Text style={styles.daysNumber}>{couple?.daysTogether || 428}</Text>
+              <Text style={styles.daysNumber}>{couple?.daysTogether || 1}</Text>
               <Text style={styles.daysLabel}>Days in Love 💖</Text>
             </View>
 
@@ -517,22 +475,19 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         </TouchableOpacity>
 
         {/* 9. Memory Flashback */}
-        <RomanticCard style={styles.memoryCard}>
-          <View style={styles.memoryHeader}>
-            <Text style={styles.memoryTag}>📸 MEMORY FLASHBACK</Text>
-            <Text style={styles.memoryDate}>March 14</Text>
-          </View>
+        <TouchableOpacity onPress={() => navigation.navigate('Memories')} activeOpacity={0.85}>
+          <RomanticCard style={styles.memoryCard}>
+            <View style={styles.memoryHeader}>
+              <Text style={styles.memoryTag}>📸 OUR LOVE SCRAPBOOK</Text>
+              <Text style={styles.memoryDate}>Day {couple?.daysTogether || 1}</Text>
+            </View>
 
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop' }}
-            style={styles.memoryImage}
-          />
-
-          <Text style={styles.memoryTitle}>Goa Beach Sunset Trip 🌅</Text>
-          <Text style={styles.memoryDesc}>
-            "Walking barefoot on the sand, drinking coconut water, and laughing till our bellies hurt."
-          </Text>
-        </RomanticCard>
+            <Text style={styles.memoryTitle}>Capture Your First Memory Together 💖</Text>
+            <Text style={styles.memoryDesc}>
+              Tap to add your first photo, milestone, or special moment to your private couple memory scrapbook!
+            </Text>
+          </RomanticCard>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* MODALS */}
