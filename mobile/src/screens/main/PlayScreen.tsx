@@ -107,7 +107,12 @@ export const PlayScreen: React.FC = () => {
         </ScrollView>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* 1. 500+ SCENARIOS & COMPATIBILITY QUIZZES HERO */}
         <RomanticCard style={styles.deepQuizHeroCard} variant="glass">
           <View style={styles.deepQuizHeroTop}>
@@ -349,8 +354,12 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weights.bold,
   },
   scroll: {
+    flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.xxl,
+    paddingTop: Spacing.xs,
+    paddingBottom: 140,
   },
   deepQuizHeroCard: {
     marginVertical: Spacing.xs,

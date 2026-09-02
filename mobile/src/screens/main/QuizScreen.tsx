@@ -148,6 +148,8 @@ export const QuizScreen: React.FC = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
         onScroll={({ nativeEvent }) => {
           const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
           if (layoutMeasurement.height + contentOffset.y >= contentSize.height - 200) {
@@ -404,8 +406,12 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weights.bold,
   },
   scroll: {
+    flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.xxl,
+    paddingTop: Spacing.xs,
+    paddingBottom: 140,
   },
   heroCard: {
     marginVertical: Spacing.xs,

@@ -196,14 +196,19 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       <AmbientBackgroundHearts />
       <Header onOpenChat={() => setShowChatModal(true)} />
 
-      {/* 24-Hour Couple Stories Tray */}
-      <StoriesTray
-        stories={stories}
-        onAddStoryPress={() => setShowCreateStory(true)}
-        onViewStoryPress={(story) => setActiveStoryToView(story)}
-      />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* 24-Hour Couple Stories Tray */}
+        <StoriesTray
+          stories={stories}
+          onAddStoryPress={() => setShowCreateStory(true)}
+          onViewStoryPress={(story) => setActiveStoryToView(story)}
+        />
 
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
         {/* 1. Hero Days Together Counter */}
         <RomanticCard style={styles.heroCard} variant="glass">
           <View style={styles.heroTop}>
@@ -649,8 +654,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   scroll: {
+    flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.xxl,
+    paddingTop: Spacing.xs,
+    paddingBottom: 130,
   },
   heroCard: {
     marginVertical: Spacing.xs,

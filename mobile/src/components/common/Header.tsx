@@ -43,83 +43,93 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, showStats = tru
 
   const handleVipPress = () => {
     triggerHaptic('light');
-    openPaywall('Amora VIP Couple Pass');
+    openPaywall('Couple-Friendly VIP Pass');
   };
+
+  const greetingName = user?.nickname || user?.name || 'My Love';
 
   return (
     <View style={styles.container}>
+      {/* ROW 1: Brand Title & Top Icon Controls */}
       <View style={styles.topRow}>
         <View style={styles.titleContainer}>
           {title ? (
-            <>
-              <Text style={styles.title}>{title}</Text>
-              {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-            </>
+            <View>
+              <Text style={styles.screenTitle}>{title}</Text>
+              {subtitle && <Text style={styles.screenSubtitle}>{subtitle}</Text>}
+            </View>
           ) : (
-            <View style={styles.brandContainer}>
-              <View style={styles.brandTitleRow}>
-                <Text style={styles.brandTitle}>Couple-Friendly <Text style={styles.heartIcon}>❤️</Text></Text>
-                {isPremium && (
-                  <View style={styles.vipTagPill}>
-                    <Crown size={10} color="#8A5D00" />
-                    <Text style={styles.vipTagText}>VIP</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.brandSubtitle}>
-                {user ? `Hi, ${user.nickname || user.name}` : 'Our Private Space'}
-              </Text>
+            <View style={styles.brandTitleRow}>
+              <Text style={styles.brandTitle}>Couple-Friendly</Text>
+              <Text style={styles.heartIcon}>❤️</Text>
+              {isPremium && (
+                <View style={styles.vipTagPill}>
+                  <Crown size={10} color="#8A5D00" />
+                  <Text style={styles.vipTagText}>VIP</Text>
+                </View>
+              )}
             </View>
           )}
         </View>
 
-        {showStats && (
-          <View style={styles.statsRow}>
-            {/* VIP Upgrade Pill */}
+        <View style={styles.topActionsRow}>
+          {/* Lofi & Ambient Couple Radio Player */}
+          <CoupleRadioPlayer />
+
+          {/* Direct Couple Chat Button */}
+          {onOpenChat && (
+            <TouchableOpacity style={styles.chatButton} onPress={handleChatPress} activeOpacity={0.7}>
+              <MessageCircle size={18} color={Colors.primary} fill="#FFEBF2" />
+              <View style={styles.chatBadgeDot} />
+            </TouchableOpacity>
+          )}
+
+          {/* Switch User Avatar Button */}
+          <TouchableOpacity
+            style={[styles.avatarButton, user?.id === 2 && styles.avatarButtonPartner]}
+            onPress={handleToggleUser}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.avatarEmoji}>{user?.id === 1 ? '👩' : '👨'}</Text>
+            <View style={styles.switchBadge}>
+              <UserCheck size={9} color="#FFFFFF" />
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* ROW 2: Clean Subtitle Greeting & Live Couple Stats Bar */}
+      {showStats && !title && (
+        <View style={styles.bottomStatsRow}>
+          <View style={styles.greetingPill}>
+            <Text style={styles.greetingText} numberOfLines={1}>
+              Hi, <Text style={styles.greetingNameText}>{greetingName}</Text> 🥰
+            </Text>
+          </View>
+
+          <View style={styles.statsBadgesWrap}>
+            {/* VIP Upgrade Pill if not upgraded */}
             {!isPremium && (
               <TouchableOpacity style={styles.vipPill} onPress={handleVipPress} activeOpacity={0.8}>
-                <Crown size={12} color="#8A5D00" />
+                <Crown size={11} color="#8A5D00" />
                 <Text style={styles.vipPillText}>VIP ({priceDisplay})</Text>
-              </TouchableOpacity>
-            )}
-
-            {/* Lofi & Ambient Couple Radio Mini Button */}
-            <CoupleRadioPlayer />
-
-            {/* Direct Couple Chat Button */}
-            {onOpenChat && (
-              <TouchableOpacity style={styles.chatButton} onPress={handleChatPress} activeOpacity={0.7}>
-                <MessageCircle size={18} color={Colors.primary} fill="#FFEBF2" />
-                <View style={styles.chatBadgeDot} />
               </TouchableOpacity>
             )}
 
             {/* Streak Badge */}
             <View style={styles.statBadge}>
-              <Flame size={18} color="#FF7A00" fill="#FF7A00" />
+              <Flame size={14} color="#FF7A00" fill="#FF7A00" />
               <Text style={styles.statText}>{couple?.streakCount || 1}d</Text>
             </View>
 
-            {/* Total Hearts Currency */}
+            {/* Hearts Badge */}
             <TouchableOpacity style={[styles.statBadge, styles.heartBadge]} onPress={handleHeartPress} activeOpacity={0.7}>
-              <Heart size={16} color={Colors.loveRed} fill={Colors.loveRed} />
+              <Heart size={13} color={Colors.loveRed} fill={Colors.loveRed} />
               <Text style={[styles.statText, { color: Colors.loveRed }]}>{couple?.totalHearts || 50}</Text>
             </TouchableOpacity>
-
-            {/* Switch User Demo Switcher */}
-            <TouchableOpacity 
-              style={[styles.avatarButton, user?.id === 2 && styles.avatarButtonPartner]} 
-              onPress={handleToggleUser}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.avatarEmoji}>{user?.id === 1 ? '👩' : '👨'}</Text>
-              <View style={styles.switchBadge}>
-                <UserCheck size={10} color="#FFFFFF" />
-              </View>
-            </TouchableOpacity>
           </View>
-        )}
-      </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -127,87 +137,67 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, showStats = tru
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.sm,
-    paddingBottom: Spacing.sm,
+    paddingTop: Spacing.xs,
+    paddingBottom: Spacing.xs + 2,
     backgroundColor: Colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: '#FFF0F5',
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    minHeight: 40,
   },
   titleContainer: {
     flex: 1,
-  },
-  brandContainer: {
-    flexDirection: 'column',
+    justifyContent: 'center',
   },
   brandTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   brandTitle: {
-    fontSize: Typography.sizes.xl,
+    fontSize: Typography.sizes.lg,
     fontWeight: Typography.weights.heavy,
     color: Colors.primaryDark,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
   },
   heartIcon: {
+    fontSize: Typography.sizes.md,
+  },
+  screenTitle: {
     fontSize: Typography.sizes.lg,
+    fontWeight: Typography.weights.heavy,
+    color: Colors.textPrimary,
+  },
+  screenSubtitle: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.textSecondary,
+    marginTop: 1,
   },
   vipTagPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
     backgroundColor: '#FFF0C2',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
     borderRadius: Spacing.borderRadius.sm,
     borderWidth: 0.5,
     borderColor: '#FFD700',
+    marginLeft: 2,
   },
   vipTagText: {
     fontSize: 9,
     fontWeight: Typography.weights.heavy,
     color: '#8A5D00',
   },
-  vipPill: {
+  topActionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    backgroundColor: '#FFF0C2',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: Spacing.borderRadius.full,
-    borderWidth: 1,
-    borderColor: '#FFD700',
-  },
-  vipPillText: {
-    fontSize: 10,
-    fontWeight: Typography.weights.heavy,
-    color: '#8A5D00',
-  },
-  brandSubtitle: {
-    fontSize: Typography.sizes.sm,
-    color: Colors.textSecondary,
-    fontWeight: Typography.weights.medium,
-    marginTop: 1,
-  },
-  title: {
-    fontSize: Typography.sizes.xl,
-    fontWeight: Typography.weights.bold,
-    color: Colors.textPrimary,
-  },
-  subtitle: {
-    fontSize: Typography.sizes.sm,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+    gap: 8,
   },
   chatButton: {
     width: 34,
@@ -224,29 +214,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 5,
     right: 5,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
     backgroundColor: Colors.loveRed,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: '#FFFFFF',
-  },
-  statBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF0E6',
-    paddingHorizontal: 7,
-    paddingVertical: 5,
-    borderRadius: Spacing.borderRadius.full,
-    gap: 2,
-  },
-  heartBadge: {
-    backgroundColor: '#FFEBF0',
-  },
-  statText: {
-    fontSize: Typography.sizes.xs - 1,
-    fontWeight: Typography.weights.bold,
-    color: '#D35400',
   },
   avatarButton: {
     width: 34,
@@ -276,5 +249,65 @@ const styles = StyleSheet.create({
     borderRadius: 6.5,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  bottomStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+    paddingTop: 4,
+    borderTopWidth: 0.5,
+    borderTopColor: '#FFF5F8',
+  },
+  greetingPill: {
+    flex: 1,
+    marginRight: 6,
+  },
+  greetingText: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.textSecondary,
+    fontWeight: Typography.weights.medium,
+  },
+  greetingNameText: {
+    fontWeight: Typography.weights.bold,
+    color: Colors.textPrimary,
+  },
+  statsBadgesWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  vipPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FFF0C2',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: Spacing.borderRadius.full,
+    borderWidth: 1,
+    borderColor: '#FFD700',
+  },
+  vipPillText: {
+    fontSize: 10,
+    fontWeight: Typography.weights.heavy,
+    color: '#8A5D00',
+  },
+  statBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF0E6',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: Spacing.borderRadius.full,
+    gap: 2,
+  },
+  heartBadge: {
+    backgroundColor: '#FFEBF0',
+  },
+  statText: {
+    fontSize: Typography.sizes.xs - 2,
+    fontWeight: Typography.weights.bold,
+    color: '#D35400',
   },
 });
